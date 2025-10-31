@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -11,7 +11,7 @@ export default async function Home() {
     redirect("/dashboard");  
   }
   return (
-    <div className="min-h-screen bg-linear-to-br from-purple-50 to-purple-100 flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center dark:bg-accent">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
           <h1 className="text-5xl font-bold text-accent-foreground mb-6">
@@ -31,7 +31,7 @@ export default async function Home() {
             </Link>
             <Link
               href="#"
-              className="bg-white text-primary px-8 py-3 rounded-lg font-semibold border-2 border-primary hover:bg-primary/10 transition-colors"
+              className="bg-accent text-primary px-8 py-3 rounded-lg font-semibold border-2 border-primary hover:bg-primary/10 transition-colors"
             >
               Learn More
             </Link>

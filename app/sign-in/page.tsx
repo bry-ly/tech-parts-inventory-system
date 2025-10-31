@@ -2,8 +2,16 @@ import { Cpu } from "lucide-react";
 
 import { SignInForm } from "@/components/auth/sign-in-form";
 import Link from "next/link";
+import { auth } from "@/lib/auth/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (session?.user) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-6">

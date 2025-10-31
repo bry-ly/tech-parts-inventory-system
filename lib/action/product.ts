@@ -143,7 +143,7 @@ export async function createProduct(formData: FormData) {
       message: "Product added successfully!",
       errors: {},
     };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       message: "Failed to create product.",
@@ -205,7 +205,7 @@ export async function updateProduct(formData: FormData) {
       message: "Product updated successfully.",
       errors: {},
     };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       message: "Failed to update product.",

@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { deleteProduct, updateProduct } from "@/lib/action/product";
+import Image from "next/image";
 
 export interface Product {
   id: string;
@@ -162,7 +163,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
           } else {
             toast.error(result?.message ?? "Failed to delete product.");
           }
-        } catch (error) {
+        } catch {
           toast.error("Failed to delete product.");
         } finally {
           setDeletingId(null);
@@ -206,10 +207,12 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
           return (
             <div className="flex items-center gap-3">
               {product.imageUrl ? (
-                <img
+                <Image
                   src={product.imageUrl || "/placeholder.svg"}
                   alt={product.name}
                   className="h-10 w-10 rounded object-cover"
+                  width={40}
+                  height={40}
                 />
               ) : (
                 <div className="flex h-10 w-10 items-center justify-center rounded bg-card-foreground">

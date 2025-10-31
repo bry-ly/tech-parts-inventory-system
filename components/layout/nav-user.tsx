@@ -54,7 +54,7 @@ export function NavUser({
         },
       });
       toast.success("Signed out successfully.");
-    } catch (error) {
+    } catch{
       toast.error("Failed to sign out.");
     } finally {
       setIsSigningOut(false);

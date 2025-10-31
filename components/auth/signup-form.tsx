@@ -17,7 +17,8 @@ import {
 import { Input } from "@/components/ui/input"
 import Link from "next/link";
 import { useState } from "react"
-import { authClient } from "@/lib/auth-client"
+import { IconEye, IconEyeOff } from "@tabler/icons-react"
+import { authClient } from "@/lib/auth/auth-client"
 import { useRouter } from "next/navigation"
 
 export function SignupForm({
@@ -28,6 +29,8 @@ export function SignupForm({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
@@ -45,7 +48,7 @@ export function SignupForm({
       return
     }
     try {
-      const { data, error } = await authClient.signUp.email({ name, email, password })
+      const { error } = await authClient.signUp.email({ name, email, password })
       if (error) {
         setError(error.message || "Sign up failed.")
       } else {
@@ -53,8 +56,8 @@ export function SignupForm({
         form.reset()
         router.push("/sign-in")
       }
-    } catch (err: any) {
-      setError(err.message || "Sign up failed.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign up failed.");
     } finally {
       setLoading(false)
     }
@@ -81,14 +84,60 @@ export function SignupForm({
                 <Input id="email" name="email" type="email" placeholder="techparts@gmail.com" required />
               </Field>
               <Field>
-                <Field className="grid grid-cols-2 gap-4">
+                <Field className="grid gap-4 md:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" name="password" type="password" required />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
+                        onClick={() => setShowPassword((previous) => !previous)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <IconEyeOff className="h-4 w-4" aria-hidden="true" />
+                        ) : (
+                          <IconEye className="h-4 w-4" aria-hidden="true" />
+                        )}
+                      </Button>
+                    </div>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
-                    <Input id="confirm-password" name="confirm-password" type="password" required />
+                    <div className="relative">
+                      <Input
+                        id="confirm-password"
+                        name="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
+                        onClick={() =>
+                          setShowConfirmPassword((previous) => !previous)
+                        }
+                        aria-label={
+                          showConfirmPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <IconEyeOff className="h-4 w-4" aria-hidden="true" />
+                        ) : (
+                          <IconEye className="h-4 w-4" aria-hidden="true" />
+                        )}
+                      </Button>
+                    </div>
                   </Field>
                 </Field>
                 <FieldDescription>

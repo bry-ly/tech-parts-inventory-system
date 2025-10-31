@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { authClient } from "@/lib/auth-client"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { authClient } from "@/lib/auth/auth-client";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
 
 export function SignInForm({
   className,
@@ -26,6 +27,7 @@ export function SignInForm({
 }: React.ComponentProps<"div">) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -36,7 +38,7 @@ export function SignInForm({
     const email = formData.get("email") as string
     const password = formData.get("password") as string
     try {
-      const { data, error } = await authClient.signIn.email({ email, password })
+      const { error } = await authClient.signIn.email({ email, password })
       if (error) {
         setError(error.message || "Sign in failed.")
       } else {
@@ -44,8 +46,8 @@ export function SignInForm({
         router.push("/sign-in")
       }
       
-    } catch (err: any) {
-      setError(err.message || "Sign in failed.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign in failed.");
     } finally {
       setLoading(false)
     }
@@ -82,7 +84,28 @@ export function SignInForm({
                     Forgot your password?
                   </Link>
                 </div>
-                <Input id="password" name="password" type="password" required />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
+                    onClick={() => setShowPassword((previous) => !previous)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <IconEyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <IconEye className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </Button>
+                </div>
               </Field>
               <Field>
                 <Button type="submit" disabled={loading}>{loading ? "Signing in..." : "Sign in"}</Button>

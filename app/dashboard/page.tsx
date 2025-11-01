@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   const userSidebar = {
     name: user.name ?? user.email ?? "User",
     email: user.email ?? "",
-    avatar: user.image ?? "/avatars/shadcn.jpg",
+    avatar: user.image ?? "/avatars/placeholder.svg",
   };
 
   const userId = user.id;

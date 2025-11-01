@@ -27,7 +27,7 @@ export default async function InventoryPage() {
   const userSidebar = {
     name: user.name ?? user.email ?? "User",
     email: user.email ?? "",
-    avatar: user.image ?? "/avatars/shadcn.jpg",
+    avatar: user.image ?? "/avatars/placeholder.svg",
   };
 
   const userId = user.id;
@@ -80,7 +80,7 @@ export default async function InventoryPage() {
                   Complete inventory of all hardware components
                 </p>
               </div>
-              <div className="p-6">
+              <div className="p-6 mx-auto">
                 <InventoryDataTable items={items} />
               </div>
             </div>

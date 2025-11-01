@@ -21,7 +21,7 @@ export default async function AddProductPage() {
   const userSidebar = {
     name: user.name ?? user.email ?? "User",
     email: user.email ?? "",
-    avatar: user.image ?? "/avatars/shadcn.jpg",
+    avatar: user.image ?? "/avatars/placeholder.svg",
   };
 
   return (
@@ -46,7 +46,7 @@ export default async function AddProductPage() {
               Use categories to organize items efficiently.
             </p>
           </div>
-          <div className="max-w-4xl">
+          <div className="max-w-4xl justify-center mx-auto">
             <AddProductForm />
           </div>
         </main>

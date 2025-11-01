@@ -2,11 +2,10 @@
 
 import type { ChangeEvent, FormEvent } from "react";
 import { useState } from "react";
-import { Info, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { toast } from "sonner";
-
+import { useUploadFiles } from "better-upload/client";
 import { createProduct } from "@/lib/action/product";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +18,7 @@ import { Field, FieldContent, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
-import { Uploader } from "@/components/uploader/uploader";
+import { UploadDropzone } from "@/components/ui/upload-dropzone";
 
 type FormState = {
   name: string;
@@ -80,6 +79,9 @@ export function AddProductForm() {
   );
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { control } = useUploadFiles({
+    route: "demo",
+  });
 
   const selectedCategory = formData.category;
   const isLowStock =
@@ -177,12 +179,8 @@ export function AddProductForm() {
   return (
     <>
       <Toaster richColors position="top-right" />
-      <form
-        className="space-y-8"
-        onSubmit={handleSubmit}
-        onReset={handleReset}
-      >
-        <Card className="w-6xl">
+      <form className="space-y-8" onSubmit={handleSubmit} onReset={handleReset}>
+        <Card className=" ">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Component details</CardTitle>
             <CardDescription>
@@ -373,7 +371,7 @@ export function AddProductForm() {
         </Card>
 
         {selectedCategory && (
-          <Card className="max-w-6xl w-6xl">
+          <Card className="">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Zap className="h-5 w-5 text-primary" />
@@ -422,7 +420,7 @@ export function AddProductForm() {
           </Card>
         )}
 
-        <Card className="max-w-6xl w-6xl">
+        <Card className="">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Supply & warranty</CardTitle>
             <CardDescription>
@@ -466,7 +464,7 @@ export function AddProductForm() {
           </CardContent>
         </Card>
 
-        <Card className="w-6xl">
+        <Card className="">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Media & additional notes</CardTitle>
             <CardDescription>
@@ -478,7 +476,15 @@ export function AddProductForm() {
               <Field>
                 <FieldLabel>Product image</FieldLabel>
                 <FieldContent>
-                  <Uploader />
+                  <UploadDropzone
+                    control={control}
+                    accept="image/*"
+                    description={{
+                      maxFiles: 4,
+                      maxFileSize: "2MB",
+                      fileTypes: "JPEG, PNG, GIF",
+                    }}
+                  />
                   {renderFieldErrors("imageUrl")}
                 </FieldContent>
               </Field>
@@ -500,21 +506,21 @@ export function AddProductForm() {
             </div>
           </CardContent>
         </Card>
-
-        <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950 center justify-center flex w-6xl">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
-            <strong>Pro tips:</strong> Use consistent category names, capture
-            compatibility details, and enable low stock alerts to stay ahead of
-            shortages.
-          </AlertDescription>
-        </Alert>
-
-        <div className="flex gap-3 w-50 ml-100">
-          <Button type="submit" size="lg" className="flex-1" disabled={isSubmitting}>
+        <div className="flex gap-3">
+          <Button
+            type="submit"
+            size="lg"
+            className="flex-1"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Adding..." : "Add product to inventory"}
           </Button>
-          <Button type="reset" variant="secondary" size="lg" disabled={isSubmitting}>
+          <Button
+            type="reset"
+            variant="secondary"
+            size="lg"
+            disabled={isSubmitting}
+          >
             Clear form
           </Button>
         </div>

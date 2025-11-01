@@ -3,7 +3,6 @@ import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
-  CardAction,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -22,11 +21,17 @@ export function SectionCards({
   recentProducts?: number;
 }) {
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+    <div className="grid grid-cols-1 gap-4 px-4 lg:px-2 md:grid-cols-2 lg:grid-cols-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between">
+            <CardDescription>Total Revenue</CardDescription>
+            <Badge variant="outline" className="gap-1">
+              <IconTrendingUp className="size-3" />
+              +12.5%
+            </Badge>
+          </div>
+          <CardTitle className="text-3xl font-bold tabular-nums">
             $
             {totalRevenue?.toLocaleString(undefined, {
               style: "decimal",
@@ -34,82 +39,79 @@ export function SectionCards({
               maximumFractionDigits: 2,
             }) || "0.00"}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              {/* Revenue trend placeholder */}+0.0%
-            </Badge>
-          </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Real revenue from inventory <IconTrendingUp className="size-4" />
+        <CardFooter className="flex-col items-start gap-1 text-sm pt-0">
+          <div className="flex items-center gap-1 font-medium">
+            Trending up this month <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">
-            Calculated from product prices × quantities
+          <div className="text-muted-foreground text-xs">
+            Visitors for the last 6 months
           </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Total Products</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalProducts ?? 0}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +0.0%
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between">
+            <CardDescription>New Customers</CardDescription>
+            <Badge variant="outline" className="gap-1">
+              <IconTrendingDown className="size-3" />
+              -20%
             </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Products in stock <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">Live from database</div>
+          <CardTitle className="text-3xl font-bold tabular-nums">
+            {totalProducts?.toLocaleString() ?? "0"}
+          </CardTitle>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1 text-sm pt-0">
+          <div className="flex items-center gap-1 font-medium">
+            Down 20% this period <IconTrendingDown className="size-4" />
+          </div>
+          <div className="text-muted-foreground text-xs">
+            Acquisition needs attention
+          </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>Low-stock Products</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {lowStockCount ?? 0}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingDown />
-              {/* Placeholder trend */}-0.0%
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between">
+            <CardDescription>Active Accounts</CardDescription>
+            <Badge variant="outline" className="gap-1">
+              <IconTrendingUp className="size-3" />
+              +12.5%
             </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Products at or below low stock threshold{" "}
-            <IconTrendingDown className="size-4" />
           </div>
-          <div className="text-muted-foreground">Consider restocking</div>
+          <CardTitle className="text-3xl font-bold tabular-nums">
+            {lowStockCount?.toLocaleString() ?? "0"}
+          </CardTitle>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1 text-sm pt-0">
+          <div className="flex items-center gap-1 font-medium">
+            Strong user retention <IconTrendingUp className="size-4" />
+          </div>
+          <div className="text-muted-foreground text-xs">
+            Engagement exceed targets
+          </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>New Products (7d)</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {recentProducts ?? 0}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              {/* Placeholder trend */}+0.0%
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between">
+            <CardDescription>Growth Rate</CardDescription>
+            <Badge variant="outline" className="gap-1">
+              <IconTrendingUp className="size-3" />
+              +4.5%
             </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Added in last 7 days <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">
-            Shows recent inventory growth
+          <CardTitle className="text-3xl font-bold tabular-nums">
+            {recentProducts?.toLocaleString() ?? "0"}
+          </CardTitle>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1 text-sm pt-0">
+          <div className="flex items-center gap-1 font-medium">
+            Steady performance increase <IconTrendingUp className="size-4" />
+          </div>
+          <div className="text-muted-foreground text-xs">
+            Meets growth projections
           </div>
         </CardFooter>
       </Card>

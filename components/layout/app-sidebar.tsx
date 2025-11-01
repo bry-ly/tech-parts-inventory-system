@@ -3,20 +3,15 @@
 import type * as React from "react";
 import {
   IconDashboard,
-  IconDatabase,
   IconFileAi,
   IconFileDescription,
-  IconFileWord,
   IconHelp,
   IconShoppingCart,
-  IconReport,
-  IconSearch,
   IconSettings,
   IconPlus,
   IconCamera,
 } from "@tabler/icons-react";
 
-import { NavDocuments } from "@/components/layout/nav-documents";
 import { NavMain } from "@/components/layout/nav-main";
 import { NavSecondary } from "@/components/layout/nav-secondary";
 import { NavUser } from "@/components/layout/nav-user";
@@ -105,33 +100,11 @@ const data = {
       icon: IconSettings,
     },
     {
-      title: "Get Help",
+      title: "Help",
       url: "#",
       icon: IconHelp,
     },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
-    },
-  ],
+  ]
 };
 
 interface AppSidebarProps {
@@ -161,7 +134,6 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

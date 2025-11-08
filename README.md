@@ -213,5 +213,5 @@ This project is licensed under the **MIT License** — feel free to modify and u
 
 ## 💡 Credits
 Created by **[Bry-Ly](https://github.com/bry-ly)**  
-Built with caffeine, Prisma migrations, and questionable life choices.
+Built with caffeine, Prisma migrations, and questionable life 
 

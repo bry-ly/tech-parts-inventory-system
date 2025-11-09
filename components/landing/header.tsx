@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "../kibo-ui/theme-switcher";
 
 const menuItems = [
+  { name: "About", href: "#content" },
   { name: "Features", href: "#features" },
   { name: "Pricing", href: "#pricing" },
-  { name: "Content", href: "#content" },
+  { name: "FAQ", href: "#faq" },
 ];
 
 export const HeroHeader = () => {
@@ -24,6 +25,19 @@ export const HeroHeader = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleSmoothScroll = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
+    e.preventDefault();
+    setMenuState(false);
+    const target = document.querySelector(href);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <header>
       <nav
@@ -61,12 +75,13 @@ export const HeroHeader = () => {
               <ul className="flex gap-8 text-sm">
                 {menuItems.map((item, index) => (
                   <li key={index}>
-                    <Link
+                    <a
                       href={item.href}
-                      className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                      onClick={(e) => handleSmoothScroll(e, item.href)}
+                      className="text-muted-foreground hover:text-accent-foreground block cursor-pointer duration-150"
                     >
                       <span>{item.name}</span>
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -77,12 +92,13 @@ export const HeroHeader = () => {
                 <ul className="space-y-6 text-base">
                   {menuItems.map((item, index) => (
                     <li key={index}>
-                      <Link
+                      <a
                         href={item.href}
-                        className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                        onClick={(e) => handleSmoothScroll(e, item.href)}
+                        className="text-muted-foreground hover:text-accent-foreground block cursor-pointer duration-150"
                       >
                         <span>{item.name}</span>
-                      </Link>
+                      </a>
                     </li>
                   ))}
                 </ul>

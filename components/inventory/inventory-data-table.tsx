@@ -27,6 +27,8 @@ import {
   IconPackage,
   IconTrash,
   IconEdit,
+  IconUpload,
+  IconX,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +119,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [editProduct, setEditProduct] = React.useState<Product | null>(null);
   const [editForm, setEditForm] = React.useState<Record<string, string>>({});
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [isSubmitting, startEditTransition] = React.useTransition();
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [deleteDialogProduct, setDeleteDialogProduct] =
@@ -140,7 +143,9 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
       notes: product.notes ?? "",
       compatibility: product.compatibility ?? "",
       supplier: product.supplier ?? "",
+      imageUrl: product.imageUrl ?? "",
     });
+    setImagePreview(product.imageUrl ?? null);
     setIsEditOpen(true);
   }, []);
 
@@ -207,24 +212,24 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
           return (
             <div className="flex items-center gap-3">
               {product.imageUrl ? (
-                <Image
-                  src={product.imageUrl || "/placeholder.svg"}
-                  alt={product.name}
-                  className="h-10 w-10 rounded object-cover"
-                  width={40}
-                  height={40}
-                />
+                <div className="relative h-10 w-10 overflow-hidden rounded border">
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded bg-card-foreground">
-                  <IconPackage className="h-5 w-5 text-secondary" />
+                <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                  <IconPackage className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="font-medium text-primary">
-                  {product.name}
-                </span>
+                <span className="font-medium text-primary">{product.name}</span>
                 {product.sku && (
-                  <span className="text-xs text-primary">
+                  <span className="text-xs text-muted-foreground">
                     SKU: {product.sku}
                   </span>
                 )}
@@ -366,6 +371,39 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
     []
   );
 
+  const handleImageChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size must be less than 5MB");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImagePreview(base64String);
+        setEditForm((prev) => ({ ...prev, imageUrl: base64String }));
+      };
+      reader.readAsDataURL(file);
+    },
+    []
+  );
+
+  const handleRemoveImage = React.useCallback(() => {
+    setImagePreview(null);
+    setEditForm((prev) => ({ ...prev, imageUrl: "" }));
+  }, []);
+
   const handleEditSubmit = React.useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -438,7 +476,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
 
       {lowStockItems.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-          <IconAlertCircle className="h-4 w-4 flex-shrink-0" />
+          <IconAlertCircle className="h-4 w-4 shrink-0" />
           <span>
             {lowStockItems.length} item{lowStockItems.length !== 1 ? "s" : ""}{" "}
             below low stock threshold
@@ -449,20 +487,24 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
       <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader className="bg-muted">
-            {table.getHeaderGroups().map((headerGroup: HeaderGroup<Product>) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header: Header<Product, unknown>) => (
-                  <TableHead key={header.id} className="font-semibold">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
+            {table
+              .getHeaderGroups()
+              .map((headerGroup: HeaderGroup<Product>) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map(
+                    (header: Header<Product, unknown>) => (
+                      <TableHead key={header.id} className="font-semibold">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    )
+                  )}
+                </TableRow>
+              ))}
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
@@ -550,13 +592,61 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
       </div>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl h-screen">
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit product</DialogTitle>
           </DialogHeader>
-          <form className="space-y-6" onSubmit={handleEditSubmit}>
+          <form
+            className="space-y-4 overflow-y-auto flex-1 pr-2"
+            onSubmit={handleEditSubmit}
+          >
+            {/* Image Upload Section */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Product Image</label>
+              {imagePreview ? (
+                <div className="relative w-full h-40 rounded-lg border-2 border-dashed border-border overflow-hidden">
+                  <Image
+                    src={imagePreview}
+                    alt="Product preview"
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                  >
+                    <IconX className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="image-upload-edit"
+                  className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <IconUpload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Click to upload product image
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG, or WEBP (MAX. 5MB)
+                    </p>
+                  </div>
+                  <input
+                    id="image-upload-edit"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                </label>
+              )}
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="name">
                   Name
                 </label>
@@ -568,7 +658,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                   onChange={handleEditChange}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="sku">
                   SKU
                 </label>
@@ -582,7 +672,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="category">
                   Category
                 </label>
@@ -601,7 +691,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                   ))}
                 </select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="manufacturer">
                   Manufacturer
                 </label>
@@ -615,7 +705,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="model">
                   Model
                 </label>
@@ -626,7 +716,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                   onChange={handleEditChange}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="condition">
                   Condition
                 </label>
@@ -646,8 +736,8 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="quantity">
                   Quantity
                 </label>
@@ -661,7 +751,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                   onChange={handleEditChange}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="lowStockAt">
                   Low stock at
                 </label>
@@ -674,7 +764,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                   onChange={handleEditChange}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="price">
                   Price
                 </label>
@@ -689,21 +779,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                   onChange={handleEditChange}
                 />
               </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="location">
-                  Location
-                </label>
-                <Input
-                  id="location"
-                  name="location"
-                  value={editForm.location ?? ""}
-                  onChange={handleEditChange}
-                />
-              </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="warrantyMonths">
                   Warranty (months)
                 </label>
@@ -718,7 +794,32 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="location">
+                  Location
+                </label>
+                <Input
+                  id="location"
+                  name="location"
+                  value={editForm.location ?? ""}
+                  onChange={handleEditChange}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="supplier">
+                  Supplier
+                </label>
+                <Input
+                  id="supplier"
+                  name="supplier"
+                  value={editForm.supplier ?? ""}
+                  onChange={handleEditChange}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="compatibility">
                 Compatibility
               </label>
@@ -731,27 +832,15 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="notes">
                 Notes
               </label>
               <Textarea
                 id="notes"
                 name="notes"
-                rows={3}
+                rows={2}
                 value={editForm.notes ?? ""}
-                onChange={handleEditChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="supplier">
-                Supplier
-              </label>
-              <Input
-                id="supplier"
-                name="supplier"
-                value={editForm.supplier ?? ""}
                 onChange={handleEditChange}
               />
             </div>

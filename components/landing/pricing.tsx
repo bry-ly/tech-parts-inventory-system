@@ -12,9 +12,9 @@ import { Check } from "lucide-react";
 
 export default function Pricing() {
   return (
-    <section className="py-16 md:py-32 " id="pricing">
+    <section className="py-10 md:py-20 " id="pricing">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="mx-auto max-w-2xl space-y-6 text-center">
+        <div className="mx-auto max-w-2xl space-y-2 text-center">
           <h1 className="text-center text-4xl font-semibold lg:text-5xl">
             Pricing that Scales with You
           </h1>

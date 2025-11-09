@@ -19,6 +19,8 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@better-upload": "https://better-upload.com/r/{name}.json"
+    "@better-upload": "https://better-upload.com/r/{name}.json",
+    "@tailark": "https://tailark.com/r/{name}.json",
+    "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json"
   }
 }

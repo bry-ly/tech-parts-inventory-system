@@ -1,65 +1,90 @@
-"use client"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+"use client";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { useState } from "react"
-import { IconEye, IconEyeOff } from "@tabler/icons-react"
-import { authClient } from "@/lib/auth/auth-client"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { IconEye, IconEyeOff, IconBrandGoogle } from "@tabler/icons-react";
+import { authClient } from "@/lib/auth/auth-client";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true);
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Google sign in failed.";
+      toast.error("Sign in failed", {
+        description: errorMessage,
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError(null)
-    setSuccess(null)
-    setLoading(true)
-    const form = e.currentTarget
-    const formData = new FormData(form)
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const confirmPassword = formData.get("confirm-password") as string
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirm-password") as string;
     if (password !== confirmPassword) {
-      setLoading(false)
-      setError("Passwords do not match.")
-      return
+      setLoading(false);
+      setError("Passwords do not match.");
+      return;
     }
     try {
-      const { error } = await authClient.signUp.email({ name, email, password })
+      const { error } = await authClient.signUp.email({
+        name,
+        email,
+        password,
+      });
       if (error) {
-        setError(error.message || "Sign up failed.")
+        setError(error.message || "Sign up failed.");
       } else {
-        setSuccess("Registration successful! Please sign in to continue.")
-        form.reset()
-        router.push("/sign-in")
+        setSuccess("Registration successful! Please sign in to continue.");
+        form.reset();
+        router.push("/sign-in");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -73,15 +98,52 @@ export function SignupForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            {/* Google Sign In Button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading || loading}
+            >
+              <IconBrandGoogle className="mr-2 h-4 w-4" />
+              {googleLoading ? "Signing in..." : "Continue with Google"}
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-4">
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                <Input id="name" name="name" type="text" placeholder="Tech Parts Inc." required />
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Tech Parts Inc."
+                  required
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input id="email" name="email" type="email" placeholder="techparts@gmail.com" required />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="techparts@gmail.com"
+                  required
+                />
               </Field>
               <Field>
                 <Field className="grid gap-4 md:grid-cols-2">
@@ -100,7 +162,9 @@ export function SignupForm({
                         size="icon"
                         className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
                         onClick={() => setShowPassword((previous) => !previous)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showPassword ? (
                           <IconEyeOff className="h-4 w-4" aria-hidden="true" />
@@ -111,7 +175,9 @@ export function SignupForm({
                     </div>
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+                    <FieldLabel htmlFor="confirm-password">
+                      Confirm Password
+                    </FieldLabel>
                     <div className="relative">
                       <Input
                         id="confirm-password"
@@ -128,7 +194,9 @@ export function SignupForm({
                           setShowConfirmPassword((previous) => !previous)
                         }
                         aria-label={
-                          showConfirmPassword ? "Hide password" : "Show password"
+                          showConfirmPassword
+                            ? "Hide password"
+                            : "Show password"
                         }
                       >
                         {showConfirmPassword ? (
@@ -145,9 +213,19 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit" disabled={loading}>{loading ? "Creating..." : "Create Account"}</Button>
-                {error && <FieldDescription className="text-red-600 text-center">{error}</FieldDescription>}
-                {success && <FieldDescription className="text-green-600 text-center">{success}</FieldDescription>}
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Creating..." : "Create Account"}
+                </Button>
+                {error && (
+                  <FieldDescription className="text-red-600 text-center">
+                    {error}
+                  </FieldDescription>
+                )}
+                {success && (
+                  <FieldDescription className="text-green-600 text-center">
+                    {success}
+                  </FieldDescription>
+                )}
                 <FieldDescription className="text-center">
                   Already have an account? <Link href="/sign-in">Sign in</Link>
                 </FieldDescription>

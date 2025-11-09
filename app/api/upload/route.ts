@@ -5,10 +5,10 @@ import {
   type Router,
 } from "better-upload/server";
 
-const s3 = new S3Client();
+const S3 = new S3Client();
 
 const router: Router = {
-  client: s3,
+  client: S3,
   bucketName: "my-bucket",
   routes: {
     demo: route({

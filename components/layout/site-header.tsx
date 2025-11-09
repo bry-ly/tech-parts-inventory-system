@@ -1,7 +1,7 @@
 import React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { ModeToggle } from "@/components/ui/mode-toggle";
+import { ThemeSwitcher } from "@/components/kibo-ui/theme-switcher";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -44,7 +44,7 @@ export function SiteHeader({ title, breadcrumbs }: SiteHeaderProps) {
         <h1 className="text-base font-medium">{title || "Dashboard"}</h1>
       )}
       <div className="ml-auto flex items-center gap-2">
-        <ModeToggle />
+        <ThemeSwitcher />
       </div>
     </header>
   );

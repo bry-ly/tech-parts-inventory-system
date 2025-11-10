@@ -37,9 +37,9 @@ export default async function InventoryPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const items = allProducts.map((p) => ({
-    ...p,
-    price: Number(p.price),
+  const items = allProducts.map((product) => ({
+    ...product,
+    price: Number(product.price),
   }));
 
   return (

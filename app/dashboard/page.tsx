@@ -39,26 +39,26 @@ export default async function DashboardPage() {
 
   const totalProducts = allProducts.length;
   const totalInventoryValue = allProducts.reduce(
-    (sum, p) => sum + Number(p.price) * p.quantity,
+    (accumulator, product) => accumulator + Number(product.price) * product.quantity,
     0
   );
-  const lowStockCount = allProducts.filter((p) => {
+  const lowStockCount = allProducts.filter((product) => {
     const lowThreshold =
-      p.lowStockAt == null ? undefined : Number(p.lowStockAt);
+      product.lowStockAt == null ? undefined : Number(product.lowStockAt);
     return (
-      typeof lowThreshold === "number" && Number(p.quantity) <= lowThreshold
+      typeof lowThreshold === "number" && Number(product.quantity) <= lowThreshold
     );
   }).length;
 
-  const recentProductsCount = allProducts.filter((p) => {
+  const recentProductsCount = allProducts.filter((product) => {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return new Date(p.createdAt) >= sevenDaysAgo;
+    return new Date(product.createdAt) >= sevenDaysAgo;
   }).length;
 
   // Generate mock chart data for the last 90 days
-  const chartData = Array.from({ length: 90 }, (_, i) => {
+  const chartData = Array.from({ length: 90 }, (_, dayIndex) => {
     const date = new Date();
-    date.setDate(date.getDate() - (90 - i));
+    date.setDate(date.getDate() - (90 - dayIndex));
     return {
       date: date.toISOString().split("T")[0],
       value:
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
                       Total Units
                     </span>
                     <span className="font-semibold">
-                      {allProducts.reduce((sum, p) => sum + p.quantity, 0)}
+                      {allProducts.reduce((totalUnits, product) => totalUnits + product.quantity, 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
                     <span className="font-semibold">
                       {
                         new Set(
-                          allProducts.map((p) => p.category).filter(Boolean)
+                          allProducts.map((product) => product.category).filter(Boolean)
                         ).size
                       }
                     </span>

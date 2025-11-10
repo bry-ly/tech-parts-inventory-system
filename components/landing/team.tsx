@@ -41,8 +41,8 @@ const AvatarWithFallback = ({ src, alt }: { src: string; alt: string }) => {
       height="460"
       width="460"
       loading="lazy"
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
+      onError={(errorEvent) => {
+        const target = errorEvent.target as HTMLImageElement;
         target.src = "/placeholder.svg";
       }}
     />

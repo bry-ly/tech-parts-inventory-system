@@ -2,11 +2,11 @@ import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import HeroSection from "@/components/landing/hero-section";
-import Features from "@/components/landing/features-4";
+import Features from "@/components/landing/features";
 // import Pricing from "@/components/landing/pricing";
-import FAQsTwo from "@/components/landing/faqs-2";
+import FAQsTwo from "@/components/landing/faqs";
 import FooterSection from "@/components/landing/footer";
-import ContentSection from "@/components/landing/content-1";
+import ContentSection from "@/components/landing/content";
 import TeamSection from "@/components/landing/team";
 
 export default async function Home() {

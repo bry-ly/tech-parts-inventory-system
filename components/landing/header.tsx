@@ -10,7 +10,8 @@ import { ThemeSwitcher } from "../kibo-ui/theme-switcher";
 const menuItems = [
   { name: "About", href: "#content" },
   { name: "Features", href: "#features" },
-  { name: "Pricing", href: "#pricing" },
+  { name: "Team", href: "#team" },
+  // { name: "Pricing", href: "#pricing" },
   { name: "FAQ", href: "#faq" },
 ];
 
@@ -104,7 +105,9 @@ export const HeroHeader = () => {
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
+                <div className="md:items-center flex justify-center">
                 <ThemeSwitcher />
+                </div>
                 <Button
                   asChild
                   variant="outline"

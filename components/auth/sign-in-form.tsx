@@ -128,7 +128,7 @@ export function SignInForm({
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="techparts@gmail.com"
+                  placeholder="techparts@example.com"
                   required
                 />
               </Field>

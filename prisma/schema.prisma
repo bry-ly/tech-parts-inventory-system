@@ -99,4 +99,6 @@ model Product {
   @@index([userId, category])
   @@index([manufacturer])
   @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([userId, quantity])
 }

@@ -2,7 +2,7 @@ import type React from "react";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma/prisma";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -30,40 +30,57 @@ export default async function DashboardPage() {
   };
 
   const userId = user.id;
-  const prisma = new PrismaClient();
 
+  // Fetch only required fields for calculations
   const allProducts = await prisma.product.findMany({
     where: { userId },
-    orderBy: { createdAt: "desc" },
+    select: {
+      price: true,
+      quantity: true,
+      lowStockAt: true,
+      createdAt: true,
+      category: true,
+    },
   });
 
-  const totalProducts = allProducts.length;
-  const totalInventoryValue = allProducts.reduce(
-    (sum, p) => sum + Number(p.price) * p.quantity,
-    0
-  );
-  const lowStockCount = allProducts.filter((p) => {
+  // Calculate all metrics in a single pass
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const categories = new Set<string>();
+  let totalProducts = 0;
+  let totalInventoryValue = 0;
+  let lowStockCount = 0;
+  let recentProductsCount = 0;
+  let totalUnits = 0;
+
+  for (const p of allProducts) {
+    totalProducts++;
+    totalInventoryValue += Number(p.price) * p.quantity;
+    totalUnits += p.quantity;
+    
+    if (p.category) {
+      categories.add(p.category);
+    }
+    
     const lowThreshold =
       p.lowStockAt == null ? undefined : Number(p.lowStockAt);
-    return (
-      typeof lowThreshold === "number" && Number(p.quantity) <= lowThreshold
-    );
-  }).length;
+    if (typeof lowThreshold === "number" && p.quantity <= lowThreshold) {
+      lowStockCount++;
+    }
+    
+    if (new Date(p.createdAt) >= sevenDaysAgo) {
+      recentProductsCount++;
+    }
+  }
 
-  const recentProductsCount = allProducts.filter((p) => {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return new Date(p.createdAt) >= sevenDaysAgo;
-  }).length;
+  const categoriesCount = categories.size;
 
-  // Generate mock chart data for the last 90 days
+  // Generate simplified chart data
   const chartData = Array.from({ length: 90 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (90 - i));
     return {
       date: date.toISOString().split("T")[0],
-      value:
-        Math.floor(Math.random() * totalInventoryValue * 0.5) +
-        totalInventoryValue * 0.5,
+      value: totalInventoryValue,
     };
   });
 
@@ -115,21 +132,13 @@ export default async function DashboardPage() {
                     <span className="text-sm text-muted-foreground">
                       Total Units
                     </span>
-                    <span className="font-semibold">
-                      {allProducts.reduce((sum, p) => sum + p.quantity, 0)}
-                    </span>
+                    <span className="font-semibold">{totalUnits}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">
                       Categories
                     </span>
-                    <span className="font-semibold">
-                      {
-                        new Set(
-                          allProducts.map((p) => p.category).filter(Boolean)
-                        ).size
-                      }
-                    </span>
+                    <span className="font-semibold">{categoriesCount}</span>
                   </div>
                 </div>
               </div>

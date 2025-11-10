@@ -89,27 +89,32 @@ export async function deleteProduct(formData: FormData) {
     };
   }
 
-  const existing = await prisma.product.findFirst({
-    where: { id, userId: user.id },
-  });
+  try {
+    // Delete directly with combined where clause
+    // This will only delete if both id matches AND userId matches
+    const result = await prisma.product.deleteMany({
+      where: { id, userId: user.id },
+    });
 
-  if (!existing) {
+    if (result.count === 0) {
+      return {
+        success: false,
+        message: "Product not found or access denied.",
+      };
+    }
+
+    revalidatePath("/inventory");
+
+    return {
+      success: true,
+      message: "Product deleted successfully.",
+    };
+  } catch {
     return {
       success: false,
-      message: "Product not found or access denied.",
+      message: "Failed to delete product.",
     };
   }
-
-  await prisma.product.delete({
-    where: { id },
-  });
-
-  revalidatePath("/inventory");
-
-  return {
-    success: true,
-    message: "Product deleted successfully.",
-  };
 }
 
 export async function createProduct(formData: FormData) {

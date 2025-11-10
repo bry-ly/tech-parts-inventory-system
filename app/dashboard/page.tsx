@@ -10,6 +10,7 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import type { Metadata } from "next";
 import { SectionCards } from "@/components/inventory/section-cards";
 import { ChartAreaInteractive } from "@/components/inventory/chart-area-interactive";
+import { IconCurrencyPeso } from "@tabler/icons-react";
 
 export const metadata: Metadata = {
   title: "Dashboard | Hardware Inventory Management",
@@ -105,8 +106,9 @@ export default async function DashboardPage() {
                     <span className="text-sm text-muted-foreground">
                       Avg Product Price
                     </span>
-                    <span className="font-semibold">
-                      ${(totalInventoryValue / (totalProducts || 1)).toFixed(2)}
+                    <span className="font-semibold flex items-center gap-1">
+                      <IconCurrencyPeso className="size-4" />
+                      {(totalInventoryValue / (totalProducts || 1)).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pb-4 border-b">

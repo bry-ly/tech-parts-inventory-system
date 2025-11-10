@@ -1,4 +1,8 @@
-import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
+import {
+  IconTrendingDown,
+  IconTrendingUp,
+  IconCurrencyPeso,
+} from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,8 +35,8 @@ export function SectionCards({
               +12.5%
             </Badge>
           </div>
-          <CardTitle className="text-3xl font-bold tabular-nums">
-            $
+          <CardTitle className="text-3xl font-bold tabular-nums flex items-center gap-1">
+            <IconCurrencyPeso className="size-7" />
             {totalRevenue?.toLocaleString(undefined, {
               style: "decimal",
               minimumFractionDigits: 2,

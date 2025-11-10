@@ -76,7 +76,7 @@ export function ChartAreaInteractive({
             value={timeRange}
             onValueChange={setTimeRange}
             variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
+            className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
           >
             <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
             <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
@@ -114,12 +114,12 @@ export function ChartAreaInteractive({
               <linearGradient id="fillValue" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--color-value)"
+                  stopColor="var(--chart-2)"
                   stopOpacity={1.0}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--color-value)"
+                  stopColor="var(--chart-4)"
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -157,7 +157,7 @@ export function ChartAreaInteractive({
               dataKey="value"
               type="natural"
               fill="url(#fillValue)"
-              stroke="var(--color-value)"
+              stroke="var(--chart-2)"
               stackId="a"
             />
           </AreaChart>

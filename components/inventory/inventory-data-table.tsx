@@ -29,6 +29,7 @@ import {
   IconEdit,
   IconUpload,
   IconX,
+  IconCurrencyPeso,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -302,8 +303,9 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
         accessorKey: "price",
         header: "Price",
         cell: ({ row }) => (
-          <span className="font-medium">
-            ${Number(row.original.price).toFixed(2)}
+          <span className="font-medium flex items-center gap-1">
+            <IconCurrencyPeso className="size-4" />
+            {Number(row.original.price).toFixed(2)}
           </span>
         ),
       },
@@ -768,16 +770,22 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                 <label className="text-sm font-medium" htmlFor="price">
                   Price
                 </label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  value={editForm.price ?? "0"}
-                  onChange={handleEditChange}
-                />
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <IconCurrencyPeso className="size-4 text-muted-foreground" />
+                  </div>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    className="pl-9"
+                    value={editForm.price ?? "0"}
+                    onChange={handleEditChange}
+                  />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium" htmlFor="warrantyMonths">
@@ -875,7 +883,7 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
             <AlertDialogTitle>Delete product</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete{" "}
-              <span className="font-medium text-slate-900">
+              <span className="font-medium text-primary">
                 {deleteDialogProduct?.name ?? "this product"}
               </span>
               ? This action cannot be undone.

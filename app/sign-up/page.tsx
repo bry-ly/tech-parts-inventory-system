@@ -1,6 +1,6 @@
 import { Cpu } from "lucide-react";
 
-import { SignupForm } from "@/components/auth/signup-form";
+import { SignupForm } from "@/components/auth/sign-up-form";
 import Link from "next/link";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
@@ -13,7 +13,7 @@ export default async function SignupPage() {
   }
 
   return (
-    <div className="relative flex min-h-svh flex-col items-center justify-center gap-6 overflow-hidden p-6 md:p-10">
+    <div className="relative flex min-h-svh lg:h-screen flex-col items-center justify-center gap-6 overflow-hidden p-6 md:p-10">
       {/* Decorative Background Gradients with Animation */}
       <div aria-hidden className="absolute inset-0 isolate contain-strict">
         <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)] animate-[pulse_8s_ease-in-out_infinite]" />

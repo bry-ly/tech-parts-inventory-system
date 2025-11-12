@@ -203,6 +203,17 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
     );
   }, [items, searchTerm]);
 
+  const lowStockItems = React.useMemo(() => {
+    return filteredItems.filter((item) => {
+      const lowThreshold =
+        item.lowStockAt == null ? undefined : Number(item.lowStockAt);
+      return (
+        typeof lowThreshold === "number" &&
+        Number(item.quantity) <= lowThreshold
+      );
+    });
+  }, [filteredItems]);
+
   const columns = React.useMemo<ColumnDef<Product>[]>(
     () => [
       {
@@ -452,14 +463,6 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-  });
-
-  const lowStockItems = filteredItems.filter((item) => {
-    const lowThreshold =
-      item.lowStockAt == null ? undefined : Number(item.lowStockAt);
-    return (
-      typeof lowThreshold === "number" && Number(item.quantity) <= lowThreshold
-    );
   });
 
   return (

@@ -7,7 +7,7 @@ export const Logo = ({ className }: { className?: string }) => {
       <div className="relative">
         <Cpu className="h-8 w-8 text-primary" strokeWidth={2} />
       </div>
-      <span className="text-xl font-bold text-foreground">Tech Parts Inc</span>
+      <span className="text-xl font-bold text-foreground">Tech Parts</span>
     </div>
   );
 };

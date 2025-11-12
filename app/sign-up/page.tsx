@@ -5,7 +5,13 @@ import Link from "next/link";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+    title: "Sign Up - Tech Parts",
+    description: "Your one-stop shop for tech parts inventory management.",
+  };
+  
 export default async function SignupPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user) {

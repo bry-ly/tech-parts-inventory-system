@@ -5,13 +5,17 @@ import Link from "next/link";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+    title: "Sign In - Tech Parts",
+    description: "Your one-stop shop for tech parts inventory management.",
+  };
 export default async function SignInPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user) {
     redirect("/dashboard");
   }
-
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-6 overflow-hidden p-6 md:p-10">
       {/* Decorative Background Gradients with Animation */}

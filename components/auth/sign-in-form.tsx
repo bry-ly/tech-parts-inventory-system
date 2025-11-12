@@ -95,7 +95,7 @@ export function SignInForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-1">
             {/* Google Sign In Button */}
             <Button
               type="button"
@@ -160,9 +160,9 @@ export function SignInForm({
                     }
                   >
                     {showPassword ? (
-                      <IconEyeOff className="h-4 w-4" aria-hidden="true" />
-                    ) : (
                       <IconEye className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <IconEyeOff className="h-4 w-4" aria-hidden="true" />
                     )}
                   </Button>
                 </div>

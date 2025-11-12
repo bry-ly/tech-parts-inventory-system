@@ -89,11 +89,11 @@ export async function deleteProduct(formData: FormData) {
     };
   }
 
-  const existing = await prisma.product.findFirst({
+  const existingProduct = await prisma.product.findFirst({
     where: { id, userId: user.id },
   });
 
-  if (!existing) {
+  if (!existingProduct) {
     return {
       success: false,
       message: "Product not found or access denied.",
@@ -123,19 +123,19 @@ export async function createProduct(formData: FormData) {
     };
   }
 
-  const parsed = ProductSchema.safeParse(extractProductPayload(formData));
+  const validatedData = ProductSchema.safeParse(extractProductPayload(formData));
 
-  if (!parsed.success) {
+  if (!validatedData.success) {
     return {
       success: false,
       message: "Validation failed. Please check the form for errors.",
-      errors: formatValidationErrors(parsed.error.issues),
+      errors: formatValidationErrors(validatedData.error.issues),
     };
   }
 
   try {
     await prisma.product.create({
-      data: { ...parsed.data, userId: user.id },
+      data: { ...validatedData.data, userId: user.id },
     });
     revalidatePath("/inventory");
     return {
@@ -172,21 +172,21 @@ export async function updateProduct(formData: FormData) {
     };
   }
 
-  const parsed = ProductSchema.safeParse(extractProductPayload(formData));
+  const validatedData = ProductSchema.safeParse(extractProductPayload(formData));
 
-  if (!parsed.success) {
+  if (!validatedData.success) {
     return {
       success: false,
       message: "Validation failed. Please check the form for errors.",
-      errors: formatValidationErrors(parsed.error.issues),
+      errors: formatValidationErrors(validatedData.error.issues),
     };
   }
 
-  const existing = await prisma.product.findFirst({
+  const existingProduct = await prisma.product.findFirst({
     where: { id, userId: user.id },
   });
 
-  if (!existing) {
+  if (!existingProduct) {
     return {
       success: false,
       message: "Product not found or access denied.",
@@ -197,7 +197,7 @@ export async function updateProduct(formData: FormData) {
   try {
     await prisma.product.update({
       where: { id },
-      data: parsed.data,
+      data: validatedData.data,
     });
     revalidatePath("/inventory");
     return {

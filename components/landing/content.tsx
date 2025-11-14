@@ -11,14 +11,14 @@ export default function ContentSection() {
           <div className="relative mb-6 sm:mb-0">
             <div className="bg-linear-to-b aspect-76/59 relative rounded-2xl from-zinc-300 to-transparent p-px dark:from-zinc-700">
               <Image
-                src="/placeholder.svg"
+                src="/inve-dark.png"
                 className="hidden rounded-[15px] dark:block"
                 alt="inventory dashboard dark"
                 width={1207}
                 height={929}
               />
               <Image
-                src="/placeholder.svg"
+                src="/inve-light.png"
                 className="rounded-[15px] shadow dark:hidden"
                 alt="inventory dashboard light"
                 width={1207}
@@ -29,7 +29,7 @@ export default function ContentSection() {
 
           <div className="relative space-y-4">
             <p className="text-muted-foreground">
-              Tech Parts Inc. is more than just inventory software.{" "}
+              Tech Parts is more than just inventory software.{" "}
               <span className="text-accent-foreground font-bold">
                 It&apos;s a complete ecosystem
               </span>{" "}
@@ -44,7 +44,7 @@ export default function ContentSection() {
             <div className="pt-6">
               <blockquote className="border-l-4 pl-4">
                 <p>
-                  Using Tech Parts Inc. has transformed how we manage inventory.
+                  Using Tech Parts has transformed how we manage inventory.
                   The real-time tracking and low-stock alerts have eliminated
                   stockouts and saved us countless hours. It&apos;s the perfect
                   balance of power and simplicity.
@@ -52,10 +52,10 @@ export default function ContentSection() {
 
                 <div className="mt-6 space-y-3">
                   <cite className="block font-medium">
-                    Bryan Palay, Operations Manager
+                    Bryan Palay, Leader
                   </cite>
                   <div className="text-sm text-muted-foreground">
-                    TechFlow Solutions
+                    Tech Parts
                   </div>
                 </div>
               </blockquote>

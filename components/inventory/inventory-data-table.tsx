@@ -30,6 +30,9 @@ import {
   IconUpload,
   IconX,
   IconCurrencyPeso,
+  IconDownload,
+  IconFilter,
+  IconPlus,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +45,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -61,14 +79,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { deleteProduct, updateProduct } from "@/lib/action/product";
+import { deleteProduct, updateProduct, adjustStock } from "@/application/actions/product.actions";
 import Image from "next/image";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 
 export interface Product {
   id: string;
   name: string;
   sku?: string | null;
-  category?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
   manufacturer?: string | null;
   model?: string | null;
   condition?: string | null;
@@ -82,7 +107,7 @@ export interface Product {
   compatibility?: string | null;
   notes?: string | null;
   userId: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 const CONDITIONS = ["new", "used", "refurbished", "for-parts"] as const;
@@ -94,18 +119,18 @@ const CONDITION_BADGES: Record<string, string> = {
   "for-parts": "bg-orange-50 text-orange-700",
 };
 
-const CATEGORIES = [
-  "processors",
-  "motherboards",
-  "memory",
-  "storage",
-  "graphics",
-  "networking",
-  "peripherals",
-  "cooling",
-] as const;
+type CategoryOption = {
+  id: string;
+  name: string;
+};
 
-export function InventoryDataTable({ items }: { items: Product[] }) {
+export function InventoryDataTable({
+  items,
+  categories,
+}: {
+  items: Product[];
+  categories: CategoryOption[];
+}) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -117,6 +142,10 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
     pageSize: 10,
   });
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
+  const [manufacturerFilter, setManufacturerFilter] = React.useState<string>("all");
+  const [conditionFilter, setConditionFilter] = React.useState<string>("all");
+  const [lowStockFilter, setLowStockFilter] = React.useState<boolean>(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [editProduct, setEditProduct] = React.useState<Product | null>(null);
   const [editForm, setEditForm] = React.useState<Record<string, string>>({});
@@ -125,13 +154,19 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [deleteDialogProduct, setDeleteDialogProduct] =
     React.useState<Product | null>(null);
+  const [stockAdjustmentOpen, setStockAdjustmentOpen] =
+    React.useState<string | null>(null);
+  const [stockAdjustmentValue, setStockAdjustmentValue] =
+    React.useState<string>("");
+  const [adjustingStockId, setAdjustingStockId] =
+    React.useState<string | null>(null);
 
   const handleEditClick = React.useCallback((product: Product) => {
     setEditProduct(product);
     setEditForm({
       name: product.name ?? "",
       sku: product.sku ?? "",
-      category: product.category ?? "",
+      categoryId: product.categoryId ?? "",
       manufacturer: product.manufacturer ?? "",
       model: product.model ?? "",
       quantity: String(product.quantity ?? 0),
@@ -188,20 +223,125 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
   const isDeletingSelectedProduct =
     deleteDialogProduct != null && deletingId === deleteDialogProduct.id;
 
-  const filteredItems = React.useMemo(() => {
-    if (!searchTerm.trim()) {
-      return items;
-    }
-    const searchLower = searchTerm.trim().toLowerCase();
-    return items.filter((item) =>
-      [
-        item.name,
-        item.sku ?? "",
-        item.category ?? "",
-        item.manufacturer ?? "",
-      ].some((value) => value?.toLowerCase().includes(searchLower))
+  // Get unique manufacturers for filter
+  const uniqueManufacturers = React.useMemo(() => {
+    const manufacturers = new Set(
+      items.map((item) => item.manufacturer).filter(Boolean)
     );
-  }, [items, searchTerm]);
+    return Array.from(manufacturers).sort();
+  }, [items]);
+
+  const filteredItems = React.useMemo(() => {
+    let filtered = items;
+
+    // Search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.trim().toLowerCase();
+      filtered = filtered.filter((item) =>
+        [
+          item.name,
+          item.sku ?? "",
+          item.categoryName ?? "",
+          item.manufacturer ?? "",
+        ].some((value) => value?.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Category filter
+    if (categoryFilter !== "all") {
+      if (categoryFilter === "__uncategorized") {
+        filtered = filtered.filter((item) => !item.categoryId);
+      } else {
+        filtered = filtered.filter((item) => item.categoryId === categoryFilter);
+      }
+    }
+
+    // Manufacturer filter
+    if (manufacturerFilter !== "all") {
+      filtered = filtered.filter(
+        (item) => item.manufacturer === manufacturerFilter
+      );
+    }
+
+    // Condition filter
+    if (conditionFilter !== "all") {
+      filtered = filtered.filter((item) => item.condition === conditionFilter);
+    }
+
+    // Low stock filter
+    if (lowStockFilter) {
+      filtered = filtered.filter((item) => {
+        const lowThreshold =
+          item.lowStockAt == null ? undefined : Number(item.lowStockAt);
+        return (
+          typeof lowThreshold === "number" &&
+          Number(item.quantity) <= lowThreshold
+        );
+      });
+    }
+
+    return filtered;
+  }, [
+    items,
+    searchTerm,
+    categoryFilter,
+    manufacturerFilter,
+    conditionFilter,
+    lowStockFilter,
+  ]);
+
+  // Export to CSV
+  const handleExport = React.useCallback(() => {
+    const headers = [
+      "Name",
+      "SKU",
+      "Category",
+      "Manufacturer",
+      "Model",
+      "Condition",
+      "Quantity",
+      "Low Stock At",
+      "Price",
+      "Location",
+      "Supplier",
+      "Warranty (months)",
+    ];
+
+    const csvRows = [
+      headers.join(","),
+      ...filteredItems.map((item) =>
+        [
+          `"${item.name}"`,
+          `"${item.sku || ""}"`,
+          `"${item.categoryName || "Uncategorized"}"`,
+          `"${item.manufacturer || ""}"`,
+          `"${item.model || ""}"`,
+          `"${item.condition || ""}"`,
+          item.quantity,
+          item.lowStockAt || "",
+          Number(item.price).toFixed(2),
+          `"${item.location || ""}"`,
+          `"${item.supplier || ""}"`,
+          item.warrantyMonths || "",
+        ].join(",")
+      ),
+    ];
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `inventory-export-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Inventory exported successfully");
+  }, [filteredItems]);
 
   const columns = React.useMemo<ColumnDef<Product>[]>(
     () => [
@@ -240,11 +380,11 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
         },
       },
       {
-        accessorKey: "category",
+        accessorKey: "categoryName",
         header: "Category",
         cell: ({ row }) => (
           <Badge variant="outline" className="w-fit">
-            {row.original.category || "—"}
+            {row.original.categoryName || "Uncategorized"}
           </Badge>
         ),
       },
@@ -279,6 +419,8 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
           const lowThreshold =
             product.lowStockAt == null ? undefined : Number(product.lowStockAt);
           const isLow = typeof lowThreshold === "number" && qty <= lowThreshold;
+          const isAdjusting = adjustingStockId === product.id;
+          const isOpen = stockAdjustmentOpen === product.id;
 
           return (
             <div className="flex items-center gap-2">
@@ -286,6 +428,133 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
                 {qty}
               </span>
               {isLow && <IconAlertCircle className="h-4 w-4 text-red-500" />}
+              <Popover open={isOpen} onOpenChange={(open) => {
+                if (!open) {
+                  setStockAdjustmentOpen(null);
+                  setStockAdjustmentValue("");
+                } else {
+                  setStockAdjustmentOpen(product.id);
+                }
+              }}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    disabled={isAdjusting}
+                  >
+                    <IconEdit className="h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="start">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Adjust Stock</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Current quantity: {qty}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adjustment">Adjustment Amount</Label>
+                      <Input
+                        id="adjustment"
+                        type="number"
+                        placeholder="e.g., +10 or -5"
+                        value={stockAdjustmentValue}
+                        onChange={(e) => setStockAdjustmentValue(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Use positive numbers to add, negative to subtract
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const adjustment = Number(stockAdjustmentValue);
+                          if (!isNaN(adjustment) && adjustment !== 0) {
+                            setAdjustingStockId(product.id);
+                            startEditTransition(async () => {
+                              const formData = new FormData();
+                              formData.append("id", product.id);
+                              formData.append("adjustment", String(adjustment));
+                              try {
+                                const result = await adjustStock(formData);
+                                if (result?.success) {
+                                  toast.success(result.message ?? "Stock adjusted successfully.");
+                                  setStockAdjustmentOpen(null);
+                                  setStockAdjustmentValue("");
+                                } else {
+                                  toast.error(result?.message ?? "Failed to adjust stock.");
+                                }
+                              } catch {
+                                toast.error("Failed to adjust stock.");
+                              } finally {
+                                setAdjustingStockId(null);
+                              }
+                            });
+                          } else {
+                            toast.error("Please enter a valid adjustment amount.");
+                          }
+                        }}
+                        disabled={isAdjusting || !stockAdjustmentValue}
+                        className="flex-1"
+                      >
+                        {isAdjusting ? "Adjusting..." : "Apply"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setStockAdjustmentOpen(null);
+                          setStockAdjustmentValue("");
+                        }}
+                        disabled={isAdjusting}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setStockAdjustmentValue("+1")}
+                      >
+                        <IconPlus className="h-3 w-3 mr-1" />
+                        +1
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setStockAdjustmentValue("+5")}
+                      >
+                        <IconPlus className="h-3 w-3 mr-1" />
+                        +5
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setStockAdjustmentValue("+10")}
+                      >
+                        <IconPlus className="h-3 w-3 mr-1" />
+                        +10
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setStockAdjustmentValue("-1")}
+                      >
+                        -1
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           );
         },
@@ -358,7 +627,14 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
         },
       },
     ],
-    [deletingId, handleDeleteClick, handleEditClick]
+    [
+      deletingId,
+      handleDeleteClick,
+      handleEditClick,
+      adjustingStockId,
+      stockAdjustmentOpen,
+      stockAdjustmentValue,
+    ]
   );
 
   const handleEditChange = React.useCallback(
@@ -463,17 +739,149 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Input
-          placeholder="Search by name, SKU, category..."
+          placeholder="Search products"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
             setPagination({ ...pagination, pageIndex: 0 });
           }}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
+        <div className="flex items-center gap-2 sm:self-end">
+          <Badge
+            variant="secondary"
+            className="flex items-center gap-2 rounded-full px-3 py-1 text-sm"
+          >
+            All Products
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary">
+              {items.length}
+            </span>
+          </Badge>
+          {filteredItems.length !== items.length && (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-2 rounded-full px-3 py-1 text-sm"
+            >
+              Showing
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary/10 text-secondary-foreground">
+                {filteredItems.length}
+              </span>
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant={lowStockFilter ? "default" : "outline"}
+          size="sm"
+          onClick={() => {
+            setLowStockFilter(!lowStockFilter);
+            setPagination({ ...pagination, pageIndex: 0 });
+          }}
+          className="gap-2"
+        >
+          <IconAlertCircle className="h-4 w-4" />
+          Low Stock
+        </Button>
+        <Select
+          value={categoryFilter}
+          onValueChange={(value) => {
+            setCategoryFilter(value);
+            setPagination({ ...pagination, pageIndex: 0 });
+          }}
+        >
+          <SelectTrigger className="h-9 min-w-[140px] justify-between">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="__uncategorized">Uncategorized</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={manufacturerFilter}
+          onValueChange={(value) => {
+            setManufacturerFilter(value);
+            setPagination({ ...pagination, pageIndex: 0 });
+          }}
+        >
+          <SelectTrigger className="h-9 min-w-[140px] justify-between">
+            <SelectValue placeholder="Manufacturer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Manufacturers</SelectItem>
+            {uniqueManufacturers.map((manufacturer) => (
+              <SelectItem
+                key={manufacturer ?? "Unknown"}
+                value={manufacturer ?? "Unknown"}
+              >
+                {manufacturer}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={conditionFilter}
+          onValueChange={(value) => {
+            setConditionFilter(value);
+            setPagination({ ...pagination, pageIndex: 0 });
+          }}
+        >
+          <SelectTrigger className="h-9 min-w-[140px] justify-between">
+            <SelectValue placeholder="Condition" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Conditions</SelectItem>
+            {CONDITIONS.map((condition) => (
+              <SelectItem key={condition} value={condition}>
+                {condition.charAt(0).toUpperCase() + condition.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2 col-span-2 justify-end flex-1 ">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <IconFilter className="h-4 w-4" />
+                Columns
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {typeof column.columnDef.header === "string"
+                      ? column.columnDef.header
+                      : column.id}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button className="gap-2" onClick={handleExport}>
+            <IconDownload className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {lowStockItems.length > 0 && (
@@ -675,20 +1083,20 @@ export function InventoryDataTable({ items }: { items: Product[] }) {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="category">
+                <label className="text-sm font-medium" htmlFor="categoryId">
                   Category
                 </label>
                 <select
-                  id="category"
-                  name="category"
-                  value={editForm.category ?? ""}
+                  id="categoryId"
+                  name="categoryId"
+                  value={editForm.categoryId ?? ""}
                   onChange={handleEditChange}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <option value="">Select category</option>
-                  {CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                  <option value="">Uncategorized</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
                     </option>
                   ))}
                 </select>

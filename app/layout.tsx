@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tech Parts Inc",
+  title: "Tech Parts",
   description: "Your one-stop shop for tech parts inventory management.",
 };
 

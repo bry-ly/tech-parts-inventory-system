@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/infrastructure/auth/auth";
 import { headers } from "next/headers";
 
 // Example: Getting Session on a server action

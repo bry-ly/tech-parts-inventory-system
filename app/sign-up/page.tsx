@@ -2,7 +2,7 @@ import { Cpu } from "lucide-react";
 
 import { SignupForm } from "@/components/auth/sign-up-form";
 import Link from "next/link";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/infrastructure/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";

@@ -114,7 +114,7 @@ export default function HeroSection() {
                   as="h1"
                   className="mx-auto mt-8 max-w-4xl text-balance text-5xl max-md:font-semibold md:text-7xl lg:mt-16 xl:text-[5.25rem]"
                 >
-                  Smart Inventory Management for Modern Businesses
+                Inventory Management
                 </TextEffect>
                 <TextEffect
                   per="line"
@@ -141,19 +141,34 @@ export default function HeroSection() {
                     },
                     ...transitionVariants,
                   }}
-                  className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
+                  className="mt-12 flex flex-col items-center justify-center gap-3 md:flex-row mx-auto"
                 >
                   <div
                     key={1}
-                    className="bg-foreground/10 rounded-[calc(var(--radius-xl)+0.125rem)] border p-0.5"
+                    className="bg-foreground/10 rounded-[calc(var(--radius-xl)+0.125rem)] border p-0.5 w-full sm:w-auto"
                   >
                     <Button
                       asChild
                       size="lg"
-                      className="rounded-xl px-5 text-base"
+                      className="rounded-xl px-5 text-base w-full sm:w-auto"
                     >
-                      <Link href="/login">
+                      <Link href="/sign-up">
                         <span className="text-nowrap">Get Started</span>
+                      </Link>
+                    </Button>
+                  </div>
+                  <div
+                    key={2}
+                    className="bg-foreground/10 rounded-[calc(var(--radius-xl)+0.125rem)] border p-0.5 w-full sm:w-auto"
+                  >
+                    <Button
+                      asChild
+                      size="lg"
+                      variant="outline"
+                      className="rounded-xl px-5 text-base w-full sm:w-auto"
+                    >
+                      <Link href="/demo">
+                        <span className="text-nowrap">View Demo</span>
                       </Link>
                     </Button>
                   </div>

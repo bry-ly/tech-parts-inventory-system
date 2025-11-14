@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils/cn";
 import { Cpu } from "lucide-react";
 
 export const Logo = ({ className }: { className?: string }) => {

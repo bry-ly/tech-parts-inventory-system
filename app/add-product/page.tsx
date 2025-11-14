@@ -1,11 +1,12 @@
 import type React from "react";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/infrastructure/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { AddProductForm } from "@/components/product/add-product-form";
+import { prisma } from "@/infrastructure/database/prisma.repository";
 
 export const metadata = {
   title: "Dashboard | Add Product",
@@ -18,6 +19,14 @@ export default async function AddProductPage() {
   }
 
   const user = session.user;
+  const categories = await prisma.category.findMany({
+    where: { userId: user.id },
+    orderBy: { name: "asc" },
+  });
+  const categoryOptions = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+  }));
   const userSidebar = {
     name: user.name ?? user.email ?? "User",
     email: user.email ?? "",
@@ -39,15 +48,15 @@ export default async function AddProductPage() {
         <main className="p-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-accent-foreground">
-              Add Hardware Component
+              Add Product
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
-              Complete the form below to add a new component to your inventory.
+              Complete the form below to add a new product to your inventory.
               Use categories to organize items efficiently.
             </p>
           </div>
           <div className="max-w-4xl justify-center mx-auto">
-            <AddProductForm />
+            <AddProductForm categories={categoryOptions} />
           </div>
         </main>
       </SidebarInset>

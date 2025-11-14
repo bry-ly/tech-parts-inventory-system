@@ -4,7 +4,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useState } from "react";
 import { Zap, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { createProduct } from "@/lib/action/product";
+import { createProduct } from "@/application/actions/product.actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +21,7 @@ import Image from "next/image";
 
 type FormState = {
   name: string;
-  category: string;
+  categoryId: string;
   manufacturer: string;
   model: string;
   sku: string;
@@ -38,22 +38,11 @@ type FormState = {
   imageUrl: string;
 };
 
-const CATEGORIES = [
-  "processors",
-  "motherboards",
-  "memory",
-  "storage",
-  "graphics",
-  "networking",
-  "peripherals",
-  "cooling",
-] as const;
-
 const CONDITIONS = ["new", "used", "refurbished", "for-parts"] as const;
 
 const INITIAL_FORM_STATE: FormState = {
   name: "",
-  category: "",
+  categoryId: "",
   manufacturer: "",
   model: "",
   sku: "",
@@ -72,7 +61,12 @@ const INITIAL_FORM_STATE: FormState = {
 
 const createInitialFormState = (): FormState => ({ ...INITIAL_FORM_STATE });
 
-export function AddProductForm() {
+type CategoryOption = {
+  id: string;
+  name: string;
+};
+
+export function AddProductForm({ categories }: { categories: CategoryOption[] }) {
   const [formData, setFormData] = useState<FormState>(() =>
     createInitialFormState()
   );
@@ -80,7 +74,9 @@ export function AddProductForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const selectedCategory = formData.category;
+  const selectedCategory = categories.find(
+    (category) => category.id === formData.categoryId
+  );
   const isLowStock =
     Number(formData.quantity) > 0 &&
     Number(formData.lowStockAt) > 0 &&
@@ -230,7 +226,7 @@ export function AddProductForm() {
       <form className="space-y-8" onSubmit={handleSubmit} onReset={handleReset}>
         <Card className=" ">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Component details</CardTitle>
+            <CardTitle className="text-lg"> Product details</CardTitle>
             <CardDescription>
               Provide the core identification details for the hardware
               component.
@@ -238,13 +234,13 @@ export function AddProductForm() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Field>
-              <FieldLabel htmlFor="name">Component name *</FieldLabel>
+              <FieldLabel htmlFor="name">Product name *</FieldLabel>
               <FieldContent>
                 <Input
                   id="name"
                   name="name"
                   required
-                  placeholder="e.g., RTX 4090 Founders Edition"
+                  placeholder="Enter product name"
                   value={formData.name}
                   onChange={handleFormChange}
                 />
@@ -254,38 +250,48 @@ export function AddProductForm() {
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <Field>
-                <FieldLabel htmlFor="category">Category *</FieldLabel>
+                <FieldLabel htmlFor="categoryId">Category *</FieldLabel>
                 <FieldContent>
                   <select
-                    id="category"
-                    name="category"
-                    required
-                    value={formData.category}
+                  id="categoryId"
+                  name="categoryId"
+                  required={categories.length > 0}
+                  value={formData.categoryId}
                     onChange={handleFormChange}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={categories.length === 0}
                   >
-                    <option value="">Select category</option>
-                    {CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                    <option value="">
+                      {categories.length === 0
+                        ? "No categories available"
+                        : "Select category"}
+                    </option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
                       </option>
                     ))}
                   </select>
-                  {renderFieldErrors("category")}
+                  {categories.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">
+                      Create a category from the Categories page before adding products.
+                    </span>
+                  ) : null}
+                  {renderFieldErrors("categoryId")}
                 </FieldContent>
               </Field>
 
               <Field>
                 <FieldLabel htmlFor="manufacturer">Manufacturer *</FieldLabel>
                 <FieldContent>
-                  <Input
-                    id="manufacturer"
-                    name="manufacturer"
-                    required
-                    placeholder="e.g., NVIDIA"
-                    value={formData.manufacturer}
-                    onChange={handleFormChange}
-                  />
+                <Input
+                  id="manufacturer"
+                  name="manufacturer"
+                  required
+                  placeholder="Who makes this product?"
+                  value={formData.manufacturer}
+                  onChange={handleFormChange}
+                />
                   {renderFieldErrors("manufacturer")}
                 </FieldContent>
               </Field>
@@ -298,7 +304,7 @@ export function AddProductForm() {
                   <Input
                     id="model"
                     name="model"
-                    placeholder="e.g., AD102"
+                    placeholder="Model or part number"
                     value={formData.model}
                     onChange={handleFormChange}
                   />
@@ -312,7 +318,7 @@ export function AddProductForm() {
                   <Input
                     id="sku"
                     name="sku"
-                    placeholder="e.g., SKU-4090-001"
+                    placeholder="Internal SKU (optional)"
                     value={formData.sku}
                     onChange={handleFormChange}
                   />
@@ -440,7 +446,7 @@ export function AddProductForm() {
                     id="specs"
                     name="specs"
                     rows={4}
-                    placeholder={`e.g., For ${selectedCategory}: Memory capacity, power consumption, interface type, etc.`}
+                    placeholder="List key specs or important details"
                     value={formData.specs}
                     onChange={handleFormChange}
                   />
@@ -457,7 +463,7 @@ export function AddProductForm() {
                     id="compatibility"
                     name="compatibility"
                     rows={3}
-                    placeholder="e.g., Compatible with DDR5, LGA1700 socket, etc."
+                    placeholder="Describe compatible devices or requirements"
                     value={formData.compatibility}
                     onChange={handleFormChange}
                   />
@@ -483,7 +489,7 @@ export function AddProductForm() {
                   <Input
                     id="supplier"
                     name="supplier"
-                    placeholder="e.g., TechCorp Supplies Inc."
+                    placeholder="Preferred supplier (optional)"
                     value={formData.supplier}
                     onChange={handleFormChange}
                   />
@@ -501,7 +507,7 @@ export function AddProductForm() {
                     name="warrantyMonths"
                     type="number"
                     min="0"
-                    placeholder="e.g., 24"
+                    placeholder="Warranty period in months"
                     value={formData.warrantyMonths}
                     onChange={handleFormChange}
                   />
@@ -592,7 +598,7 @@ export function AddProductForm() {
                   id="notes"
                   name="notes"
                   rows={5}
-                  placeholder="Add internal notes for your team..."
+                  placeholder="Share internal notes or handling tips"
                   value={formData.notes}
                   onChange={handleFormChange}
                 />

@@ -1,5 +1,5 @@
 import type React from "react";
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/infrastructure/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
@@ -9,8 +9,8 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import type { Metadata } from "next";
 import { InventoryDataTable } from "@/components/inventory/inventory-data-table";
 import { Button } from "@/components/ui/button";
-import { prisma } from "@/lib/prisma/prisma";
-import { IconPlus } from "@tabler/icons-react";
+import { prisma } from "@/infrastructure/database/prisma.repository";
+import { IconPlus, IconTags } from "@tabler/icons-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -32,14 +32,47 @@ export default async function InventoryPage() {
 
   const userId = user.id;
 
-  const allProducts = await prisma.product.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-  });
+  const [allProducts, categories] = await Promise.all([
+    prisma.product.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      include: { category: true },
+    }),
+    prisma.category.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
+      include: {
+        _count: { select: { products: true } },
+      },
+    }),
+  ]);
+
+  const categoryOptions = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    productCount: category._count.products,
+  }));
 
   const items = allProducts.map((p) => ({
-    ...p,
+    id: p.id,
+    name: p.name,
+    sku: p.sku,
+    categoryId: p.categoryId,
+    categoryName: p.category?.name ?? null,
+    manufacturer: p.manufacturer,
+    model: p.model,
+    condition: p.condition,
     price: Number(p.price),
+    quantity: p.quantity,
+    lowStockAt: p.lowStockAt,
+    supplier: p.supplier,
+    imageUrl: p.imageUrl,
+    warrantyMonths: p.warrantyMonths,
+    location: p.location,
+    compatibility: p.compatibility,
+    notes: p.notes,
+    userId: p.userId,
+    createdAt: p.createdAt.toISOString(),
   }));
 
   return (
@@ -56,32 +89,41 @@ export default async function InventoryPage() {
         <SiteHeader />
         <main className="flex-1 overflow-auto">
           <div className="space-y-8 p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
-                <p className="mt-1 text-muted-foreground">
-                  Manage your tech hardware inventory and track stock levels
-                </p>
-              </div>
-              <Link href="/add-product">
-                <Button className="gap-2">
-                  <IconPlus className="h-4 w-4" />
-                  Add Product
-                </Button>
-              </Link>
-            </div>
-
             <div className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
               <div className="border-b border-border p-6">
-                <h2 className="text-lg font-semibold text-foreground">
-                  All Products
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Complete inventory of all hardware components
-                </p>
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">
+                      All Products
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Complete inventory of all products
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href="/categories">
+                      <Button variant="destructive" className="gap-2">
+                        <IconTags className="h-4 w-4" />
+                        Add Category
+                      </Button>
+                  </Link>
+                    <Link href="/add-product">
+                      <Button className="gap-2">
+                        <IconPlus className="h-4 w-4" />
+                        Add Product
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </div>
               <div className="p-6 mx-auto">
-                <InventoryDataTable items={items} />
+                <InventoryDataTable
+                  items={items}
+                  categories={categoryOptions.map(({ id, name }) => ({
+                    id,
+                    name,
+                  }))}
+                />
               </div>
             </div>
           </div>

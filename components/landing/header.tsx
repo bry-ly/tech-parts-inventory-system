@@ -9,10 +9,8 @@ import { ThemeSwitcher } from "../kibo-ui/theme-switcher";
 
 const menuItems = [
   { name: "About", href: "#content" },
-  { name: "Features", href: "#features" },
   { name: "Team", href: "#team" },
-  // { name: "Pricing", href: "#pricing" },
-  { name: "FAQ", href: "#faq" },
+  { name: "Features", href: "#features" },
 ];
 
 export const HeroHeader = () => {

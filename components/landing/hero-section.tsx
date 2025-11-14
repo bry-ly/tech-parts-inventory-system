@@ -141,7 +141,7 @@ export default function HeroSection() {
                     },
                     ...transitionVariants,
                   }}
-                  className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
+                  className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row md:justify-center md:gap-4"
                 >
                   <div
                     key={1}
@@ -152,8 +152,22 @@ export default function HeroSection() {
                       size="lg"
                       className="rounded-xl px-5 text-base"
                     >
-                      <Link href="/login">
+                      <Link href="/sign-up">
                         <span className="text-nowrap">Get Started</span>
+                      </Link>
+                    </Button>
+                  </div>
+                  <div
+                    key={2}
+                  >
+                    <Button
+                      asChild
+                      size="lg"
+                      variant="outline"
+                      className="rounded-xl px-5 text-base"
+                    >
+                      <Link href="/demo">
+                        <span className="text-nowrap">View Demo</span>
                       </Link>
                     </Button>
                   </div>
@@ -178,15 +192,15 @@ export default function HeroSection() {
                 <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
                   <Image
                     className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                    src="/techparts-dark.png"
-                    alt="app screen"
+                    src="/preview/techparts-dark.png"
+                    alt="Demo Dashboard"
                     width="2700"
                     height="1440"
                   />
                   <Image
                     className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
-                    src="/techparts-light.png"
-                    alt="app screen"
+                    src="/preview/techparts-light.png"
+                    alt="Demo Dashboard"
                     width="2700"
                     height="1440"
                   />

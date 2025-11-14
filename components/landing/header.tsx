@@ -4,7 +4,7 @@ import { Logo } from "@/components/landing/logo";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "../kibo-ui/theme-switcher";
 
 const menuItems = [

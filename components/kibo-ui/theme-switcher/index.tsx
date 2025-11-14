@@ -5,7 +5,7 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@/lib/utils";
 
 const themes = [
   {

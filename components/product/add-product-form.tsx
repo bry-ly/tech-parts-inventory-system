@@ -4,7 +4,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useState } from "react";
 import { Zap, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { createProduct } from "@/application/actions/product.actions";
+import { createProduct } from "@/lib/action/product";
 import { Button } from "@/components/ui/button";
 import {
   Card,

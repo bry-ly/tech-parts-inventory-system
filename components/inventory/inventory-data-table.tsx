@@ -79,7 +79,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { deleteProduct, updateProduct, adjustStock } from "@/application/actions/product.actions";
+import { deleteProduct, updateProduct, adjustStock } from "@/lib/action/product";
 import Image from "next/image";
 import {
   Popover,

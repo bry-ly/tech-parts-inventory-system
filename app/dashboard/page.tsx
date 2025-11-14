@@ -1,8 +1,8 @@
 import type React from "react";
-import { auth } from "@/infrastructure/auth/auth";
+import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { prisma } from "@/infrastructure/database/prisma.repository";
+import { prisma } from "@/lib/prisma/prisma";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -143,11 +143,11 @@ export default async function DashboardPage() {
         <SiteHeader title="Dashboard" />
         <main className="flex-1 overflow-auto">
           <div className="space-y-8 p-8">
-            <div className="flex flex-col gap-2 flex-wrap md:flex-row md:items-center md:justify-between">
+            <div>
               <h1 className="text-3xl font-bold">Welcome back, {user.name}</h1>
-              <span className="mt-1 text-muted-foreground">
+              <p className="mt-1 text-muted-foreground">
                 Here&apos;s an overview of your inventory
-              </span>
+              </p>
             </div>
 
             <SectionCards
@@ -185,7 +185,9 @@ export default async function DashboardPage() {
                     <span className="text-sm text-muted-foreground">
                       Categories
                     </span>
-                    <span className="font-semibold">{uniqueCategories}</span>
+                    <span className="font-semibold">
+                      {uniqueCategories}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -193,22 +195,18 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               <CategoryBreakdownChart
-                data={Object.entries(categoryBreakdown).map(
-                  ([category, data]) => ({
-                    category,
-                    count: data.count,
-                    value: data.value,
-                  })
-                )}
+                data={Object.entries(categoryBreakdown).map(([category, data]) => ({
+                  category,
+                  count: data.count,
+                  value: data.value,
+                }))}
               />
               <ManufacturerBreakdownChart
-                data={Object.entries(manufacturerBreakdown).map(
-                  ([manufacturer, data]) => ({
-                    manufacturer,
-                    count: data.count,
-                    value: data.value,
-                  })
-                )}
+                data={Object.entries(manufacturerBreakdown).map(([manufacturer, data]) => ({
+                  manufacturer,
+                  count: data.count,
+                  value: data.value,
+                }))}
               />
             </div>
           </div>

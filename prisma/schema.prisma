@@ -22,13 +22,6 @@ model User {
   tags          Tag[]
   ownedActivity ActivityLog[] @relation("ActivityOwner")
   actedActivity ActivityLog[] @relation("ActivityActor")
-  suppliers     Supplier[]
-  stockMovements StockMovement[] @relation("StockMovementUser")
-  performedMovements StockMovement[] @relation("StockMovementPerformer")
-  batches       Batch[]
-  stockAlerts   StockAlert[]
-  acknowledgedAlerts StockAlert[] @relation("AlertAcknowledger")
-  inventoryValues InventoryValue[]
 
   @@unique([email])
   @@map("user")
@@ -102,7 +95,6 @@ model Product {
   updatedAt      DateTime @updatedAt
   category       Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   tags           ProductTag[]
-  suppliers      ProductSupplier[]
 
   @@index([userId, categoryId])
   @@index([manufacturer])
@@ -165,135 +157,4 @@ model ActivityLog {
   @@index([userId, createdAt])
   @@index([entityType, entityId])
   @@map("activity_log")
-}
-
-model Supplier {
-  id            String    @id @default(cuid())
-  userId        String
-  name          String
-  contactPerson String?
-  email         String?
-  phone         String?
-  address       String?   @db.Text
-  website       String?
-  notes         String?   @db.Text
-  active        Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  products      ProductSupplier[]
-  stockMovements StockMovement[]
-
-  @@unique([userId, email])
-  @@index([userId, active])
-  @@map("supplier")
-}
-
-model ProductSupplier {
-  id          String   @id @default(cuid())
-  productId   String
-  supplierId  String
-  supplierSku String?
-  costPrice   Decimal  @db.Decimal(12, 2)
-  leadTimeDays Int?
-  minOrderQty  Int?
-  isPrimary   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, supplierId])
-  @@index([supplierId])
-  @@map("product_supplier")
-}
-
-model StockMovement {
-  id           String   @id @default(cuid())
-  userId       String
-  productId    String
-  supplierId   String?
-  batchId      String?
-  type         String   // IN, OUT, ADJUSTMENT, RETURN
-  quantity     Int
-  previousQty  Int
-  newQty       Int
-  unitCost     Decimal? @db.Decimal(12, 2)
-  totalCost    Decimal? @db.Decimal(12, 2)
-  reference    String?  // PO number, invoice, etc
-  reason       String?
-  notes        String?  @db.Text
-  performedBy  String
-  createdAt    DateTime @default(now())
-
-  user     User      @relation("StockMovementUser", fields: [userId], references: [id], onDelete: Cascade)
-  performer User     @relation("StockMovementPerformer", fields: [performedBy], references: [id])
-  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  batch    Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
-
-  @@index([userId, productId, createdAt])
-  @@index([type])
-  @@index([createdAt])
-  @@map("stock_movement")
-}
-
-model Batch {
-  id             String   @id @default(cuid())
-  userId         String
-  productId      String
-  batchNumber    String
-  quantity       Int
-  manufacturedAt DateTime?
-  expiresAt      DateTime?
-  receivedAt     DateTime @default(now())
-  notes          String?  @db.Text
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stockMovements StockMovement[]
-
-  @@unique([userId, productId, batchNumber])
-  @@index([userId, expiresAt])
-  @@map("batch")
-}
-
-model StockAlert {
-  id           String   @id @default(cuid())
-  userId       String
-  productId    String
-  type         String   // LOW_STOCK, OUT_OF_STOCK, EXPIRING_SOON, EXPIRED
-  message      String
-  threshold    Int?
-  currentValue Int?
-  acknowledged Boolean  @default(false)
-  acknowledgedBy String?
-  acknowledgedAt DateTime?
-  createdAt    DateTime @default(now())
-  resolvedAt   DateTime?
-
-  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  acknowledger User? @relation("AlertAcknowledger", fields: [acknowledgedBy], references: [id], onDelete: SetNull)
-
-  @@index([userId, acknowledged, type])
-  @@index([createdAt])
-  @@map("stock_alert")
-}
-
-model InventoryValue {
-  id              String   @id @default(cuid())
-  userId          String
-  totalProducts   Int
-  totalQuantity   Int
-  totalValue      Decimal  @db.Decimal(15, 2)
-  lowStockCount   Int
-  outOfStockCount Int
-  snapshotDate    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, snapshotDate])
-  @@map("inventory_value")
 }

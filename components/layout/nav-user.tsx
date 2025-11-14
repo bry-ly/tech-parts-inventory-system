@@ -21,7 +21,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { authClient } from "@/infrastructure/auth/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 
 export function NavUser({
   user,
@@ -30,7 +30,6 @@ export function NavUser({
     name: string;
     email: string;
     avatar: string;
-    image?: string; 
   };
 }) {
   const { isMobile } = useSidebar();
@@ -78,7 +77,7 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-md">
-                <AvatarImage src={user.image ?? user.avatar} alt={user.name} />
+                <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">
                   {getInitials()}
                 </AvatarFallback>

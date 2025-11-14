@@ -1,5 +1,5 @@
 "use client";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { authClient } from "@/infrastructure/auth/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { useState } from "react";
 import { IconEye, IconEyeOff, IconBrandGoogle } from "@tabler/icons-react";
 import { toast } from "sonner";

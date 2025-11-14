@@ -5,20 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 
-import {
-  createCategory,
-  deleteCategory,
-  updateCategory,
-} from "@/application/actions/category.actions";
+import { createCategory, deleteCategory, updateCategory } from "@/lib/action/category";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -46,28 +34,17 @@ type CategorySummary = {
   productCount: number;
 };
 
-type CategoryManagerProps = {
-  categories: CategorySummary[];
-  totalProducts?: number;
-};
-
-export function CategoryManager({
-  categories,
-  totalProducts = 0,
-}: CategoryManagerProps) {
+export function CategoryManager({ categories }: { categories: CategorySummary[] }) {
   const router = useRouter();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleCreateCategory = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handleCreateCategory = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalized = newCategoryName.trim();
     if (!normalized) {
@@ -84,7 +61,6 @@ export function CategoryManager({
       if (result?.success) {
         toast.success(result.message ?? "Category created.");
         setNewCategoryName("");
-        setAddDialogOpen(false);
         router.refresh();
       } else {
         toast.error(result?.message ?? "Failed to create category.");
@@ -174,54 +150,33 @@ export function CategoryManager({
     }
   };
 
-  const categoryToDelete = categories.find(
-    (category) => category.id === deleteId
-  );
-
-  const categorizedProducts = categories.reduce(
-    (sum, category) => sum + category.productCount,
-    0
-  );
-  const uncategorizedProducts = totalProducts - categorizedProducts;
+  const categoryToDelete = categories.find((category) => category.id === deleteId);
 
   return (
     <>
       <Card className="h-fit border border-border bg-card text-card-foreground shadow-sm">
         <CardHeader>
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>Categories</CardTitle>
-              <CardDescription>
-                Organize inventory into quick filters and ensure new items are
-                grouped correctly.
-              </CardDescription>
-            </div>
-            <div className="flex justify-end flex-wrap items-center gap-2 flex-1">
-              <Badge variant="secondary">Total: {categories.length}</Badge>
-              <Badge variant="outline">
-                Categorized: {categorizedProducts}
-              </Badge>
-              <Badge variant="outline">
-                Uncategorized: {Math.max(uncategorizedProducts, 0)}
-              </Badge>
-            </div>
-          </div>
+          <CardTitle>Categories</CardTitle>
+          <CardDescription>
+            Organize inventory into quick filters and ensure new items are grouped correctly.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex w-full items-center gap-2 flex-1 justify-end">
-            {/* Button to open add category dialog */}
-            <Button type="button" onClick={() => setAddDialogOpen(true)}>
-              Add Category
-            </Button>
-            {/* New Refresh button */}
+          <form className="flex w-full items-center gap-2" onSubmit={handleCreateCategory}>
+            <Input
+              value={newCategoryName}
+              onChange={(event) => setNewCategoryName(event.target.value)}
+              placeholder="e.g., Graphics Cards"
+              aria-label="New category name"
+              disabled={isCreating}
+            />
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.refresh()}
+              type="submit"
+              disabled={isCreating || newCategoryName.trim().length === 0}
             >
-              Refresh
+              {isCreating ? "Adding..." : "Add"}
             </Button>
-          </div>
+          </form>
 
           <Separator />
 
@@ -240,16 +195,11 @@ export function CategoryManager({
                     className="flex flex-col gap-3 rounded-lg border border-border/60 p-3 transition hover:border-border"
                   >
                     {isEditing ? (
-                      <form
-                        className="flex flex-col gap-2"
-                        onSubmit={handleRename}
-                      >
+                      <form className="flex flex-col gap-2" onSubmit={handleRename}>
                         <Input
                           value={editingName}
                           autoFocus
-                          onChange={(event) =>
-                            setEditingName(event.target.value)
-                          }
+                          onChange={(event) => setEditingName(event.target.value)}
                           placeholder="Category name"
                           disabled={isRenaming}
                         />
@@ -271,13 +221,13 @@ export function CategoryManager({
                     ) : (
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex flex-col">
-                          <span className="font-medium text-foreground gap-2 flex items-center">
+                          <span className="font-medium text-foreground">
                             {category.name}
-                            <Badge variant="outline" className="w-fit text-xs">
-                              {category.productCount}{" "}
-                              {category.productCount === 1 ? "item" : "items"}
-                            </Badge>
                           </span>
+                          <Badge variant="outline" className="w-fit text-xs">
+                            {category.productCount}{" "}
+                            {category.productCount === 1 ? "item" : "items"}
+                          </Badge>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Button
@@ -311,50 +261,15 @@ export function CategoryManager({
         </CardContent>
       </Card>
 
-      {/* Add Category Dialog */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent showCloseButton>
-          <DialogHeader>
-            <DialogTitle>Add Category</DialogTitle>
-            <DialogDescription>
-              Enter the name for the new category.
-            </DialogDescription>
-          </DialogHeader>
-          <form className="flex flex-col gap-4" onSubmit={handleCreateCategory}>
-            <Input
-              value={newCategoryName}
-              onChange={(event) => setNewCategoryName(event.target.value)}
-              placeholder="e.g., Beverages"
-              aria-label="New category name"
-              disabled={isCreating}
-              autoFocus
-            />
-            <DialogFooter>
-              <Button
-                type="submit"
-                disabled={isCreating || newCategoryName.trim().length === 0}
-              >
-                {isCreating ? "Adding..." : "Add"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* ...existing code for AlertDialog (delete confirmation)... */}
-      <AlertDialog
-        open={Boolean(deleteId)}
-        onOpenChange={(open) => !open && !isDeleting && setDeleteId(null)}
-      >
+      <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && !isDeleting && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete category</AlertDialogTitle>
             <AlertDialogDescription>
               {categoryToDelete ? (
                 <>
-                  This will remove <strong>{categoryToDelete.name}</strong> from
-                  your inventory.{" "}
-                  {categoryToDelete.productCount > 0
+                  This will remove <strong>{categoryToDelete.name}</strong> from your
+                  inventory. {categoryToDelete.productCount > 0
                     ? `Products in this category will move to "Uncategorized".`
                     : "No products are currently assigned to this category."}
                 </>
@@ -381,3 +296,5 @@ export function CategoryManager({
     </>
   );
 }
+
+

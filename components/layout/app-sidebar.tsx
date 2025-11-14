@@ -3,20 +3,18 @@
 import type * as React from "react";
 import {
   IconDashboard,
+  IconFileAi,
+  IconFileDescription,
   IconHelp,
   IconShoppingCart,
   IconSettings,
   IconPlus,
-  IconTruckDelivery,
-  IconArrowsExchange,
-  IconAlertTriangle,
-  IconFileUpload,
-  IconBell,
+  IconCamera,
+  IconTags,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/layout/nav-main";
 import { NavSecondary } from "@/components/layout/nav-secondary";
-import { NavQuickActions } from "@/components/layout/nav-quick-actions";
 import { NavUser } from "@/components/layout/nav-user";
 import {
   Sidebar,
@@ -41,78 +39,64 @@ const data = {
       title: "Inventory",
       url: "/inventory",
       icon: IconShoppingCart,
-      items: [
-        {
-          title: "All Products",
-          url: "/inventory",
-        },
-        {
-          title: "Add Product",
-          url: "/add-product",
-        },
-        {
-          title: "Categories",
-          url: "/categories",
-        },
-      ],
     },
     {
-      title: "Supply Chain",
-      url: "/suppliers",
-      icon: IconTruckDelivery,
-      items: [
-        {
-          title: "Suppliers",
-          url: "/suppliers",
-        },
-        {
-          title: "Stock Movements",
-          url: "/stock-movements",
-        },
-      ],
+      title: "Categories",
+      url: "/categories",
+      icon: IconTags,
     },
     {
-      title: "Monitoring",
-      url: "/alerts",
-      icon: IconAlertTriangle,
-      items: [
-        {
-          title: "Alerts",
-          url: "/alerts",
-        },
-        {
-          title: "Analytics",
-          url: "/analytics",
-        },
-        {
-          title: "Reports",
-          url: "/reports",
-        },
-      ],
-    },
-  ],
-  quickActions: [
-    {
-      name: "Add Product",
+      title: "Add Product",
       url: "/add-product",
       icon: IconPlus,
     },
-    {
-      name: "Stock Movement",
-      url: "/stock-movements",
-      icon: IconArrowsExchange,
-    },
-    {
-      name: "View Alerts",
-      url: "/alerts",
-      icon: IconBell,
-    },
   ],
-  navTools: [
+  navClouds: [
     {
-      title: "Import/Export",
-      url: "/import-export",
-      icon: IconFileUpload,
+      title: "Capture",
+      icon: IconCamera,
+      isActive: true,
+      url: "#",
+      items: [
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Proposal",
+      icon: IconFileDescription,
+      url: "#",
+      items: [
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Prompts",
+      icon: IconFileAi,
+      url: "#",
+      items: [
+        {
+          title: "Active Proposals",
+          url: "#",
+        },
+        {
+          title: "Archived",
+          url: "#",
+        },
+      ],
     },
   ],
   navSecondary: [
@@ -156,8 +140,6 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavQuickActions items={data.quickActions} />
-        <NavSecondary items={data.navTools} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

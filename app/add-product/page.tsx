@@ -1,12 +1,12 @@
 import type React from "react";
-import { auth } from "@/infrastructure/auth/auth";
+import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { AddProductForm } from "@/components/product/add-product-form";
-import { prisma } from "@/infrastructure/database/prisma.repository";
+import { prisma } from "@/lib/prisma/prisma";
 
 export const metadata = {
   title: "Dashboard | Add Product",

@@ -1,19 +1,43 @@
+import { auth } from "@/lib/auth/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import HeroSection from "@/components/landing/hero-section";
-import ContentSection from "@/components/landing/content";
 import Features from "@/components/landing/features";
-import TeamSection from "@/components/landing/team";
+// import Pricing from "@/components/landing/pricing";
 import FAQsTwo from "@/components/landing/faqs";
 import FooterSection from "@/components/landing/footer";
+import ContentSection from "@/components/landing/content";
+import TeamSection from "@/components/landing/team";
 
-export default function Page() {
+export default async function Home() {
+  const user = await auth.api
+    .getSession({
+      headers: await headers(),
+    })
+    .then((res) => res?.user || null);
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
-    <div className="relative">
+    <main>
       <HeroSection />
-      <ContentSection />
-      <Features />
-      <TeamSection />
-      <FAQsTwo />
+      <div id="content">
+        <ContentSection />
+      </div>
+      <div id="features">
+        <Features />
+      </div>
+      <div id="team">
+        <TeamSection />
+      </div>
+      {/* <div id="pricing">
+        <Pricing />
+      </div> */}
+      <div id="faq">
+        <FAQsTwo />
+      </div>
       <FooterSection />
-    </div>
+    </main>
   );
 }

@@ -1,5 +1,5 @@
 import type React from "react";
-import { auth } from "@/infrastructure/auth/auth";
+import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/layout/app-sidebar";
@@ -9,7 +9,7 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import type { Metadata } from "next";
 import { InventoryDataTable } from "@/components/inventory/inventory-data-table";
 import { Button } from "@/components/ui/button";
-import { prisma } from "@/infrastructure/database/prisma.repository";
+import { prisma } from "@/lib/prisma/prisma";
 import { IconPlus, IconTags } from "@tabler/icons-react";
 import Link from "next/link";
 

@@ -16,9 +16,10 @@ import {
 interface SiteHeaderProps {
   title?: string;
   breadcrumbs?: Array<{ label: string; href?: string }>;
+  action?: React.ReactNode;
 }
 
-export function SiteHeader({ title, breadcrumbs }: SiteHeaderProps) {
+export function SiteHeader({ title, breadcrumbs, action }: SiteHeaderProps) {
   const pathname = usePathname();
   let autoBreadcrumbs: Array<{ label: string; href?: string }> = [];
   if (!breadcrumbs) {
@@ -63,6 +64,7 @@ export function SiteHeader({ title, breadcrumbs }: SiteHeaderProps) {
         <h1 className="text-base font-medium">{title || "Dashboard"}</h1>
       )}
       <div className="ml-auto flex items-center gap-2">
+        {action}
         <ThemeSwitcher />
       </div>
     </header>

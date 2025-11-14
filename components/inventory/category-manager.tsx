@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { IconEdit, IconTrash, IconPlus, IconChevronDown, IconCurrencyPeso, IconPackage, IconMapPin, IconBuildingStore, IconShield, IconFileText } from "@tabler/icons-react";
 
-import { createCategory, deleteCategory, updateCategory } from "@/lib/action/category";
+import { deleteCategory, updateCategory } from "@/lib/action/category";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,55 +24,50 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { AddCategoryDialog } from "@/components/inventory/add-category-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
+type Product = {
+  id: string;
+  name: string;
+  sku: string | null;
+  manufacturer: string;
+  model: string | null;
+  quantity: number;
+  price: number;
+  condition: string;
+  location: string | null;
+  supplier: string | null;
+  warrantyMonths: number | null;
+  specs: string | null;
+  compatibility: string | null;
+  notes: string | null;
+  imageUrl: string | null;
+  lowStockAt: number | null;
+};
 
 type CategorySummary = {
   id: string;
   name: string;
   productCount: number;
+  products: Product[];
 };
 
 export function CategoryManager({ categories }: { categories: CategorySummary[] }) {
   const router = useRouter();
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleCreateCategory = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const normalized = newCategoryName.trim();
-    if (!normalized) {
-      toast.error("Please enter a category name.");
-      return;
-    }
-
-    setIsCreating(true);
-    const formData = new FormData();
-    formData.append("name", normalized);
-
-    try {
-      const result = await createCategory(formData);
-      if (result?.success) {
-        toast.success(result.message ?? "Category created.");
-        setNewCategoryName("");
-        router.refresh();
-      } else {
-        toast.error(result?.message ?? "Failed to create category.");
-      }
-    } catch (error) {
-      const description =
-        error instanceof Error ? error.message : "Unexpected error occurred.";
-      toast.error("Failed to create category.", { description });
-    } finally {
-      setIsCreating(false);
-    }
-  };
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   const startEditing = (category: CategorySummary) => {
     setEditingId(category.id);
@@ -162,23 +157,13 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <form className="flex w-full items-center gap-2" onSubmit={handleCreateCategory}>
-            <Input
-              value={newCategoryName}
-              onChange={(event) => setNewCategoryName(event.target.value)}
-              placeholder="e.g., Graphics Cards"
-              aria-label="New category name"
-              disabled={isCreating}
-            />
-            <Button
-              type="submit"
-              disabled={isCreating || newCategoryName.trim().length === 0}
-            >
-              {isCreating ? "Adding..." : "Add"}
-            </Button>
-          </form>
-
-          <Separator />
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="w-full sm:w-auto"
+          >
+            <IconPlus className="mr-2 h-4 w-4" />
+            Add Category
+          </Button>
 
           <div className="space-y-3">
             {categories.length === 0 ? (
@@ -195,11 +180,16 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                     className="flex flex-col gap-3 rounded-lg border border-border/60 p-3 transition hover:border-border"
                   >
                     {isEditing ? (
-                      <form className="flex flex-col gap-2" onSubmit={handleRename}>
+                      <form
+                        className="flex flex-col gap-2"
+                        onSubmit={handleRename}
+                      >
                         <Input
                           value={editingName}
                           autoFocus
-                          onChange={(event) => setEditingName(event.target.value)}
+                          onChange={(event) =>
+                            setEditingName(event.target.value)
+                          }
                           placeholder="Category name"
                           disabled={isRenaming}
                         />
@@ -219,38 +209,227 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                         </div>
                       </form>
                     ) : (
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-foreground">
-                            {category.name}
-                          </span>
-                          <Badge variant="outline" className="w-fit text-xs">
-                            {category.productCount}{" "}
-                            {category.productCount === 1 ? "item" : "items"}
-                          </Badge>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-foreground">
+                              {category.name}
+                              <Badge variant="outline" className="w-fit text-xs ml-2">
+                                {category.productCount}{" "}
+                                {category.productCount === 1 ? "item" : "items"}
+                              </Badge>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => startEditing(category)}
+                              aria-label={`Rename ${category.name}`}
+                            >
+                              <IconEdit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive focus:text-destructive"
+                              onClick={() => confirmDelete(category.id)}
+                              aria-label={`Delete ${category.name}`}
+                            >
+                              <IconTrash className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => startEditing(category)}
-                            aria-label={`Rename ${category.name}`}
+                        {category.productCount > 0 && (
+                          <Collapsible
+                            open={openCategories.has(category.id)}
+                            onOpenChange={(open) => {
+                              const newOpen = new Set(openCategories);
+                              if (open) {
+                                newOpen.add(category.id);
+                              } else {
+                                newOpen.delete(category.id);
+                              }
+                              setOpenCategories(newOpen);
+                            }}
                           >
-                            <IconEdit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive focus:text-destructive"
-                            onClick={() => confirmDelete(category.id)}
-                            aria-label={`Delete ${category.name}`}
-                          >
-                            <IconTrash className="h-4 w-4" />
-                          </Button>
-                        </div>
+                            <CollapsibleTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-between text-left text-sm text-muted-foreground hover:text-foreground"
+                              >
+                                <span>View products ({category.productCount})</span>
+                                <IconChevronDown
+                                  className={`h-4 w-4 transition-transform ${
+                                    openCategories.has(category.id)
+                                      ? "transform rotate-180"
+                                      : ""
+                                  }`}
+                                />
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2">
+                              <div className="rounded-md border border-border/60 bg-muted/30 p-3 space-y-3">
+                                {category.products.map((product) => {
+                                  const isLowStock = product.lowStockAt !== null && product.quantity <= product.lowStockAt;
+                                  const conditionColors: Record<string, string> = {
+                                    new: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
+                                    used: "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
+                                    refurbished: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+                                    "for-parts": "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+                                  };
+                                  return (
+                                    <div
+                                      key={product.id}
+                                      className="flex flex-col gap-3 rounded-md bg-background border border-border/40 p-4"
+                                    >
+                                      {/* Header Section */}
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <h4 className="font-semibold text-foreground">
+                                              {product.name}
+                                            </h4>
+                                            {isLowStock && (
+                                              <Badge variant="destructive" className="text-xs">
+                                                Low Stock
+                                              </Badge>
+                                            )}
+                                            {product.condition && (
+                                              <Badge
+                                                variant="outline"
+                                                className={`text-xs ${conditionColors[product.condition] || "bg-muted"}`}
+                                              >
+                                                {product.condition}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
+                                            {product.manufacturer && (
+                                              <span className="font-medium">{product.manufacturer}</span>
+                                            )}
+                                            {product.model && (
+                                              <span>• {product.model}</span>
+                                            )}
+                                            {product.sku && (
+                                              <span>• SKU: {product.sku}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        {product.imageUrl && (
+                                          <img
+                                            src={product.imageUrl}
+                                            alt={product.name}
+                                            className="w-16 h-16 object-cover rounded-md border border-border/40"
+                                          />
+                                        )}
+                                      </div>
+
+                                      {/* Details Grid */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        {/* Inventory Info */}
+                                        <div className="flex items-center gap-2">
+                                          <IconPackage className="h-4 w-4 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Quantity:</span>
+                                          <span className="font-medium text-foreground">
+                                            {product.quantity}
+                                            {product.lowStockAt && ` / ${product.lowStockAt} threshold`}
+                                          </span>
+                                        </div>
+
+                                        {/* Price */}
+                                        <div className="flex items-center gap-2">
+                                          <IconCurrencyPeso className="h-4 w-4 text-muted-foreground" />
+                                          <span className="text-muted-foreground">Price:</span>
+                                          <span className="font-medium text-foreground">
+                                            {product.price.toFixed(2)}
+                                          </span>
+                                        </div>
+
+                                        {/* Location */}
+                                        {product.location && (
+                                          <div className="flex items-center gap-2">
+                                            <IconMapPin className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Location:</span>
+                                            <span className="font-medium text-foreground">
+                                              {product.location}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        {/* Supplier */}
+                                        {product.supplier && (
+                                          <div className="flex items-center gap-2">
+                                            <IconBuildingStore className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Supplier:</span>
+                                            <span className="font-medium text-foreground">
+                                              {product.supplier}
+                                            </span>
+                                          </div>
+                                        )}
+
+                                        {/* Warranty */}
+                                        {product.warrantyMonths && (
+                                          <div className="flex items-center gap-2">
+                                            <IconShield className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Warranty:</span>
+                                            <span className="font-medium text-foreground">
+                                              {product.warrantyMonths} months
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Specs */}
+                                      {product.specs && (
+                                        <div className="flex flex-col gap-1">
+                                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                            <IconFileText className="h-3.5 w-3.5" />
+                                            Specifications
+                                          </div>
+                                          <p className="text-sm text-foreground pl-5 whitespace-pre-wrap">
+                                            {product.specs}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Compatibility */}
+                                      {product.compatibility && (
+                                        <div className="flex flex-col gap-1">
+                                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                            <IconFileText className="h-3.5 w-3.5" />
+                                            Compatibility
+                                          </div>
+                                          <p className="text-sm text-foreground pl-5 whitespace-pre-wrap">
+                                            {product.compatibility}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Notes */}
+                                      {product.notes && (
+                                        <div className="flex flex-col gap-1">
+                                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                            <IconFileText className="h-3.5 w-3.5" />
+                                            Notes
+                                          </div>
+                                          <p className="text-sm text-foreground pl-5 whitespace-pre-wrap">
+                                            {product.notes}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
                       </div>
                     )}
                   </div>
@@ -260,6 +439,8 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
           </div>
         </CardContent>
       </Card>
+
+      <AddCategoryDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
       <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && !isDeleting && setDeleteId(null)}>
         <AlertDialogContent>

@@ -32,6 +32,27 @@ export default async function CategoriesPage() {
       orderBy: { name: "asc" },
       include: {
         _count: { select: { products: true } },
+        products: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            manufacturer: true,
+            model: true,
+            quantity: true,
+            price: true,
+            condition: true,
+            location: true,
+            supplier: true,
+            warrantyMonths: true,
+            specs: true,
+            compatibility: true,
+            notes: true,
+            imageUrl: true,
+            lowStockAt: true,
+          },
+          orderBy: { name: "asc" },
+        },
       },
     }),
     prisma.product.count({
@@ -49,6 +70,24 @@ export default async function CategoriesPage() {
     id: category.id,
     name: category.name,
     productCount: category._count.products,
+    products: category.products.map((product) => ({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      manufacturer: product.manufacturer,
+      model: product.model,
+      quantity: product.quantity,
+      price: Number(product.price),
+      condition: product.condition,
+      location: product.location,
+      supplier: product.supplier,
+      warrantyMonths: product.warrantyMonths,
+      specs: product.specs,
+      compatibility: product.compatibility,
+      notes: product.notes,
+      imageUrl: product.imageUrl,
+      lowStockAt: product.lowStockAt,
+    })),
   }));
 
   return (

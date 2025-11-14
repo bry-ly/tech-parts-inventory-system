@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { AddProductForm } from "@/components/product/add-product-form";
 import { prisma } from "@/lib/prisma/prisma";
+import { AddCategoryButton } from "@/components/inventory/add-category-button";
 
 export const metadata = {
   title: "Dashboard | Add Product",
@@ -44,7 +45,7 @@ export default async function AddProductPage() {
     >
       <AppSidebar user={userSidebar} variant="inset" />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader action={<AddCategoryButton />} />
         <main className="p-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-accent-foreground">

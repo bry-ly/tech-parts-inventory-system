@@ -26,7 +26,7 @@ const members = [
   {
     name: "Ashley Lalican",
     role: "Members",
-    avatar: "",
+    avatar: "/avatars/LALICAN.png",
   },
 ];
 

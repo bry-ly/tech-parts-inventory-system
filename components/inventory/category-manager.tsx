@@ -32,6 +32,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import Image from "next/image";
 
 type Product = {
   id: string;
@@ -322,10 +323,13 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                           </div>
                                         </div>
                                         {product.imageUrl && (
-                                          <img
+                                          <Image   
                                             src={product.imageUrl}
                                             alt={product.name}
                                             className="w-16 h-16 object-cover rounded-md border border-border/40"
+                                            unoptimized
+                                            width={64}
+                                            height={64}
                                           />
                                         )}
                                       </div>

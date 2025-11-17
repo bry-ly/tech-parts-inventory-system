@@ -30,14 +30,28 @@ const ProductSchema = z.object({
   supplier: z.string().optional(),
   warrantyMonths: z.coerce.number().int().min(0).optional(),
   notes: z.string().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z
+    .string()
+    .optional()
+    .refine(
+      (value) => {
+        if (!value || value.trim() === "") return true;
+        // Accept both regular URLs and base64 data URLs
+        return (
+          z.string().url().safeParse(value).success ||
+          value.startsWith("data:image/")
+        );
+      },
+      { message: "Image URL must be a valid URL or base64 data URL" }
+    ),
 });
 
 function extractProductPayload(formData: FormData) {
   const imageField = formData.get("imageUrl");
+  // Treat empty strings as undefined
   const imageUrl =
     typeof imageField === "string" && imageField.trim().length > 0
-      ? imageField
+      ? imageField.trim()
       : undefined;
 
   return {

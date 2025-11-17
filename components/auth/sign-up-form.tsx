@@ -15,12 +15,24 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import Link from "next/link";
 import { useState } from "react";
 import { IconEye, IconEyeOff, IconBrandGoogle } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signUpSchema, type SignUpInput } from "@/lib/validations/auth";
 
 export function SignupForm({
   className,
@@ -28,11 +40,21 @@ export function SignupForm({
 }: React.ComponentProps<"div">) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const form = useForm<SignUpInput>({
+    resolver: zodResolver(signUpSchema),
+    mode: "onBlur",
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
@@ -52,30 +74,19 @@ export function SignupForm({
     }
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
+  async function onSubmit(data: SignUpInput) {
     setSuccess(null);
     setLoading(true);
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirm-password") as string;
-    if (password !== confirmPassword) {
-      setLoading(false);
-      setError("Passwords do not match.");
-      return;
-    }
     try {
       const { error } = await authClient.signUp.email({
-        name,
-        email,
-        password,
+        name: data.name,
+        email: data.email,
+        password: data.password,
       });
       if (error) {
-        setError(error.message || "Sign up failed.");
+        toast.error("Sign up failed", {
+          description: error.message || "Please try again.",
+        });
       } else {
         // Sign out the user immediately after signup so they must log in
         await authClient.signOut();
@@ -87,7 +98,9 @@ export function SignupForm({
         router.push("/sign-in");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed.");
+      toast.error("Sign up failed", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -128,104 +141,119 @@ export function SignupForm({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-4">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="Tech Parts"
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  required
-                />
-              </Field>
-              <Field>
-                <Field className="grid gap-4 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <div className="relative">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
                       <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        required
+                        placeholder="Tech Parts"
+                        {...field}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
-                        onClick={() => setShowPassword((previous) => !previous)}
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
-                        }
-                      >
-                        {showPassword ? (
-                          <IconEye className="h-4 w-4" aria-hidden="true" />
-                        ) : (
-                          <IconEyeOff className="h-4 w-4" aria-hidden="true" />
-                        )}
-                      </Button>
-                    </div>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="confirm-password">
-                      Confirm Password
-                    </FieldLabel>
-                    <div className="relative">
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
                       <Input
-                        id="confirm-password"
-                        name="confirm-password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        required
+                        type="email"
+                        placeholder="your.email@example.com"
+                        {...field}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
-                        onClick={() =>
-                          setShowConfirmPassword((previous) => !previous)
-                        }
-                        aria-label={
-                          showConfirmPassword
-                            ? "Hide password"
-                            : "Show password"
-                        }
-                      >
-                        {showConfirmPassword ? (
-                          <IconEye className="h-4 w-4" aria-hidden="true" />
-                        ) : (
-                          <IconEyeOff className="h-4 w-4" aria-hidden="true" />
-                        )}
-                      </Button>
-                    </div>
-                  </Field>
-                </Field>
-                <FieldDescription>
-                  Must be at least 8 characters long.
-                </FieldDescription>
-              </Field>
-              <Field>
-                <Button type="submit" disabled={loading}>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="self-start">
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
+                            onClick={() => setShowPassword((previous) => !previous)}
+                            aria-label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
+                          >
+                            {showPassword ? (
+                              <IconEye className="h-4 w-4" aria-hidden="true" />
+                            ) : (
+                              <IconEyeOff className="h-4 w-4" aria-hidden="true" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem className="self-start">
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
+                            onClick={() =>
+                              setShowConfirmPassword((previous) => !previous)
+                            }
+                            aria-label={
+                              showConfirmPassword
+                                ? "Hide password"
+                                : "Show password"
+                            }
+                          >
+                            {showConfirmPassword ? (
+                              <IconEye className="h-4 w-4" aria-hidden="true" />
+                            ) : (
+                              <IconEyeOff className="h-4 w-4" aria-hidden="true" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Button type="submit" disabled={loading} className="w-full">
                   {loading ? "Creating..." : "Create Account"}
                 </Button>
-                {error && (
-                  <FieldDescription className="text-red-600 text-center">
-                    {error}
-                  </FieldDescription>
-                )}
                 {success && (
                   <FieldDescription className="text-green-600 text-center">
                     {success}
@@ -234,9 +262,9 @@ export function SignupForm({
                 <FieldDescription className="text-center">
                   Already have an account? <Link href="/sign-in">Sign in</Link>
                 </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">

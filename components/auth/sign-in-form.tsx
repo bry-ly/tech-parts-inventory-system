@@ -15,11 +15,24 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import Link from "next/link";
 import { authClient } from "@/lib/auth/auth-client";
 import { useState } from "react";
 import { IconEye, IconEyeOff, IconBrandGoogle } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signInSchema, type SignInInput } from "@/lib/validations/auth";
+import { Spinner } from "@/components/ui/spinner";
+import { Loader} from "lucide-react";
 
 export function SignInForm({
   className,
@@ -27,8 +40,17 @@ export function SignInForm({
 }: React.ComponentProps<"div">) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const form = useForm<SignInInput>({
+    resolver: zodResolver(signInSchema),
+    mode: "onBlur",
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
@@ -48,18 +70,14 @@ export function SignInForm({
     }
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
+  async function onSubmit(data: SignInInput) {
     setLoading(true);
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
     try {
-      const { error } = await authClient.signIn.email({ email, password });
+      const { error } = await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+      });
       if (error) {
-        setError(error.message || "Sign in failed.");
         toast.error("Sign in failed", {
           description:
             error.message || "Please check your credentials and try again.",
@@ -69,7 +87,8 @@ export function SignInForm({
         toast.success("Welcome back!", {
           description: "You have successfully signed in.",
         });
-        // Force a full page reload to trigger server-side session check
+        // Show loading state and redirect to dashboard
+        setRedirecting(true);
         setTimeout(() => {
           window.location.href = "/dashboard";
         }, 500);
@@ -77,7 +96,6 @@ export function SignInForm({
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Sign in failed.";
-      setError(errorMessage);
       toast.error("Sign in failed", {
         description: errorMessage,
       });
@@ -87,6 +105,16 @@ export function SignInForm({
   }
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {redirecting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <Loader className="size-8 animate-spin" />
+            <p className="text-sm text-muted-foreground">
+              Redirecting to the dashboard...
+            </p>
+          </div>
+        </div>
+      )}
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Sign in to your account</CardTitle>
@@ -120,69 +148,97 @@ export function SignInForm({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-4">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="techparts@example.com"
-                  required
-                />
-              </Field>
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="ml-auto text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
-                    onClick={() => setShowPassword((previous) => !previous)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? (
-                      <IconEye className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <IconEyeOff className="h-4 w-4" aria-hidden="true" />
-                    )}
-                  </Button>
-                </div>
-              </Field>
-              <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign in"}
-                </Button>
-                {error && (
-                  <FieldDescription className="text-red-600 text-center">
-                    {error}
-                  </FieldDescription>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="mt-4 space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="techparts@example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center">
+                      <FormLabel>Password</FormLabel>
+                      <Link
+                        href="/forgot-password"
+                        className="ml-auto text-sm underline-offset-4 hover:underline"
+                      >
+                        Forgot your password?
+                      </Link>
+                    </div>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
+                          onClick={() =>
+                            setShowPassword((previous) => !previous)
+                          }
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showPassword ? (
+                            <IconEye className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            <IconEyeOff
+                              className="h-4 w-4"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="space-y-2">
+                <Button
+                  type="submit"
+                  disabled={loading || redirecting}
+                  className="w-full"
+                >
+                  {loading || redirecting ? (
+                    <span className="flex items-center gap-2">
+                      <Spinner className="size-4" />
+                      {redirecting ? "Redirecting..." : "Signing in..."}
+                    </span>
+                  ) : (
+                    "Sign in"
+                  )}
+                </Button>
                 <FieldDescription className="text-center">
                   Don&apos;t have an account?{" "}
                   <Link href="/sign-up">Sign up</Link>
                 </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">

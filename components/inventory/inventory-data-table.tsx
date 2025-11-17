@@ -121,6 +121,7 @@ export interface Product {
   imageUrl?: string | null;
   warrantyMonths?: number | null;
   location?: string | null;
+  specs?: string | null;
   compatibility?: string | null;
   notes?: string | null;
   userId: string;

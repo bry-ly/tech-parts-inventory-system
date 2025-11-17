@@ -77,7 +77,12 @@ export function SignupForm({
       if (error) {
         setError(error.message || "Sign up failed.");
       } else {
+        // Sign out the user immediately after signup so they must log in
+        await authClient.signOut();
         setSuccess("Registration successful! Please sign in to continue.");
+        toast.success("Account created!", {
+          description: "Please sign in to continue.",
+        });
         form.reset();
         router.push("/sign-in");
       }

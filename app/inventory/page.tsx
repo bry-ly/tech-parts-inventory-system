@@ -116,7 +116,7 @@ export default async function InventoryPage() {
                   </div>
                 </div>
               </div>
-              <div className="p-6 mx-auto">
+              <div className="p-6 overflow-hidden">
                 <InventoryDataTable
                   items={items}
                   categories={categoryOptions.map(({ id, name }) => ({

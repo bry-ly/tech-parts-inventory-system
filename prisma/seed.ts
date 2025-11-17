@@ -415,7 +415,7 @@ async function main() {
   console.log("🌱 Starting seed process...");
 
   // Find or create user
-  const userEmail = "bryanpalay119@gmail.com";
+  const userEmail = "techparts@gmail.com";
   let user = await prisma.user.findUnique({
     where: { email: userEmail },
   });
@@ -471,15 +471,40 @@ async function main() {
   let skippedCount = 0;
 
   for (const part of HARDWARE_PARTS) {
-    // Check if product with this SKU already exists
-    const existingProduct = part.sku
+    // Check if product already exists for this user
+    // First check by SKU if it exists globally
+    let productSku = part.sku || null;
+    let existingProduct = productSku
       ? await prisma.product.findUnique({
-          where: { sku: part.sku },
+          where: { sku: productSku },
         })
       : null;
 
+    // If product exists with this SKU, check if it belongs to this user
     if (existingProduct) {
-      console.log(`⏭️  Skipping ${part.name} (SKU already exists)`);
+      if (existingProduct.userId === user.id) {
+        console.log(`⏭️  Skipping ${part.name} (already exists for this user)`);
+        skippedCount++;
+        continue;
+      } else {
+        // SKU exists but belongs to another user, create with modified SKU
+        console.log(`⚠️  SKU ${productSku} exists for another user, creating with modified SKU`);
+        productSku = `${productSku}-${user.id.slice(0, 8)}`;
+      }
+    }
+
+    // Also check if product with same name, manufacturer, and model exists for this user
+    const duplicateCheck = await prisma.product.findFirst({
+      where: {
+        userId: user.id,
+        name: part.name,
+        manufacturer: part.manufacturer,
+        model: part.model || null,
+      },
+    });
+
+    if (duplicateCheck) {
+      console.log(`⏭️  Skipping ${part.name} (duplicate exists for this user)`);
       skippedCount++;
       continue;
     }
@@ -493,7 +518,7 @@ async function main() {
         name: part.name,
         manufacturer: part.manufacturer,
         model: part.model || null,
-        sku: part.sku || null,
+        sku: productSku,
         quantity: part.quantity,
         lowStockAt: part.lowStockAt || null,
         condition: part.condition,

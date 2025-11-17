@@ -57,10 +57,10 @@ export default async function DashboardPage() {
     return new Date(p.createdAt) >= sevenDaysAgo;
   }).length;
 
-  // Calculate inventory value trend over the last 90 days
+  // Calculate inventory value trend over the last year (365 days)
   // For simplicity, we'll show the total value for each day
   // In a real system, you'd track daily changes
-  const days = 90;
+  const days = 365;
   const chartData: { date: string; value: number }[] = [];
   const currentDate = new Date();
   

@@ -1,6 +1,7 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+// Tailwind's sm breakpoint is 640px - using this for mobile detection
+const MOBILE_BREAKPOINT = 576
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)

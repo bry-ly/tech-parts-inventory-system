@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
+import * as XLSX from "xlsx";
 import {
   type Cell,
   type ColumnDef,
@@ -33,6 +36,7 @@ import {
   IconDownload,
   IconFilter,
   IconPlus,
+  IconFileSpreadsheet,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +60,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -87,6 +92,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Separator } from "@/components/ui/separator";
+import { IconEye, IconInfoCircle } from "@tabler/icons-react";
 
 export interface Product {
   id: string;
@@ -113,10 +130,31 @@ export interface Product {
 const CONDITIONS = ["new", "used", "refurbished", "for-parts"] as const;
 
 const CONDITION_BADGES: Record<string, string> = {
-  new: "bg-green-50 text-green-700",
-  refurbished: "bg-blue-50 text-blue-700",
-  used: "bg-yellow-50 text-yellow-700",
-  "for-parts": "bg-orange-50 text-orange-700",
+  new: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400",
+  refurbished: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+  used: "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400",
+  "for-parts": "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400",
+};
+
+const STOCK_STATUS_BADGES: Record<string, { label: string; className: string }> = {
+  "out-of-stock": {
+    label: "Out of Stock",
+    className: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400 border-red-200 dark:border-red-800",
+  },
+  "low-stock": {
+    label: "Low Stock",
+    className: "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border-orange-200 dark:border-orange-800",
+  },
+  "in-stock": {
+    label: "In Stock",
+    className: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400 border-green-200 dark:border-green-800",
+  },
+};
+
+const getStockStatus = (quantity: number, lowStockAt: number | null | undefined) => {
+  if (quantity === 0) return "out-of-stock";
+  if (lowStockAt != null && quantity <= lowStockAt) return "low-stock";
+  return "in-stock";
 };
 
 type CategoryOption = {
@@ -131,15 +169,31 @@ export function InventoryDataTable({
   items: Product[];
   categories: CategoryOption[];
 }) {
+  const router = useRouter();
+  const isMobile = useIsMobile();
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [detailsProduct, setDetailsProduct] = React.useState<Product | null>(null);
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  // Load column visibility from localStorage on mount
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("inventory-column-visibility");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return {};
+        }
+      }
+    }
+    return {};
+  });
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 12,
   });
   const [searchTerm, setSearchTerm] = React.useState("");
   const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
@@ -201,6 +255,7 @@ export function InventoryDataTable({
           const result = await deleteProduct(formData);
           if (result?.success) {
             toast.success(result.message ?? "Product deleted successfully.");
+            router.refresh();
           } else {
             toast.error(result?.message ?? "Failed to delete product.");
           }
@@ -212,7 +267,7 @@ export function InventoryDataTable({
         }
       });
     },
-    [startEditTransition]
+    [startEditTransition, router]
   );
 
   const handleDeleteConfirm = React.useCallback(() => {
@@ -291,7 +346,7 @@ export function InventoryDataTable({
   ]);
 
   // Export to CSV
-  const handleExport = React.useCallback(() => {
+  const handleExportCSV = React.useCallback(() => {
     const headers = [
       "Name",
       "SKU",
@@ -340,7 +395,91 @@ export function InventoryDataTable({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Inventory exported successfully");
+    toast.success("Inventory exported to CSV successfully");
+  }, [filteredItems]);
+
+  // Export to Excel
+  const handleExportExcel = React.useCallback(() => {
+    const headers = [
+      "Name",
+      "SKU",
+      "Category",
+      "Manufacturer",
+      "Model",
+      "Condition",
+      "Quantity",
+      "Low Stock At",
+      "Price",
+      "Location",
+      "Supplier",
+      "Warranty (months)",
+      "Compatibility",
+      "Notes",
+    ];
+
+    const data = filteredItems.map((item) => [
+      item.name,
+      item.sku || "",
+      item.categoryName || "Uncategorized",
+      item.manufacturer || "",
+      item.model || "",
+      item.condition || "",
+      item.quantity,
+      item.lowStockAt || "",
+      Number(item.price),
+      item.location || "",
+      item.supplier || "",
+      item.warrantyMonths || "",
+      item.compatibility || "",
+      item.notes || "",
+    ]);
+
+    // Create workbook and worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+
+    // Set column widths for better readability
+    const columnWidths = [
+      { wch: 30 }, // Name
+      { wch: 20 }, // SKU
+      { wch: 15 }, // Category
+      { wch: 15 }, // Manufacturer
+      { wch: 15 }, // Model
+      { wch: 12 }, // Condition
+      { wch: 10 }, // Quantity
+      { wch: 12 }, // Low Stock At
+      { wch: 12 }, // Price
+      { wch: 15 }, // Location
+      { wch: 15 }, // Supplier
+      { wch: 15 }, // Warranty
+      { wch: 40 }, // Compatibility
+      { wch: 40 }, // Notes
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // Generate Excel file
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `inventory-export-${new Date().toISOString().split("T")[0]}.xlsx`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Inventory exported to Excel successfully");
   }, [filteredItems]);
 
   const columns = React.useMemo<ColumnDef<Product>[]>(
@@ -391,9 +530,15 @@ export function InventoryDataTable({
       {
         accessorKey: "manufacturer",
         header: "Manufacturer",
-        cell: ({ row }) => (
-          <span className="text-sm">{row.original.manufacturer || "—"}</span>
-        ),
+        cell: ({ row }) => {
+          const manufacturer = row.original.manufacturer;
+          if (!manufacturer) return <span className="text-sm">—</span>;
+          return (
+            <Badge variant="outline" className="w-fit bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+              {manufacturer}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "condition",
@@ -421,13 +566,22 @@ export function InventoryDataTable({
           const isLow = typeof lowThreshold === "number" && qty <= lowThreshold;
           const isAdjusting = adjustingStockId === product.id;
           const isOpen = stockAdjustmentOpen === product.id;
+          const stockStatus = getStockStatus(qty, lowThreshold);
+          const statusBadge = STOCK_STATUS_BADGES[stockStatus];
 
           return (
-            <div className="flex items-center gap-2">
-              <span className={`font-semibold ${isLow ? "text-red-600" : ""}`}>
-                {qty}
+            <div className="flex items-center gap-2 flex-wrap">
+              {stockStatus !== "in-stock" && (
+                <Badge
+                  variant="outline"
+                  className={`w-fit ${statusBadge.className}`}
+                >
+                  {statusBadge.label}
+                </Badge>
+              )}
+              <span className={`font-semibold text-sm ${isLow || qty === 0 ? "text-red-600 dark:text-red-400" : ""}`}>
+                {qty} {qty === 1 ? "unit" : "units"}
               </span>
-              {isLow && <IconAlertCircle className="h-4 w-4 text-red-500" />}
               <Popover open={isOpen} onOpenChange={(open) => {
                 if (!open) {
                   setStockAdjustmentOpen(null);
@@ -485,6 +639,7 @@ export function InventoryDataTable({
                                   toast.success(result.message ?? "Stock adjusted successfully.");
                                   setStockAdjustmentOpen(null);
                                   setStockAdjustmentValue("");
+                                  router.refresh();
                                 } else {
                                   toast.error(result?.message ?? "Failed to adjust stock.");
                                 }
@@ -571,32 +726,41 @@ export function InventoryDataTable({
       {
         accessorKey: "price",
         header: "Price",
-        cell: ({ row }) => (
-          <span className="font-medium flex items-center gap-1">
-            <IconCurrencyPeso className="size-4" />
-            {Number(row.original.price).toFixed(2)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const price = Number(row.original.price);
+          return (
+            <Badge variant="outline" className="w-fit bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-semibold">
+              <IconCurrencyPeso className="size-3 mr-1" />
+              {price.toFixed(2)}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "warrantyMonths",
         header: "Warranty",
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {row.original.warrantyMonths
-              ? `${row.original.warrantyMonths} months`
-              : "—"}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const warrantyMonths = row.original.warrantyMonths;
+          if (!warrantyMonths) return <span className="text-sm text-muted-foreground">—</span>;
+          return (
+            <Badge variant="outline" className="w-fit bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-400 border-purple-200 dark:border-purple-800">
+              {warrantyMonths} {warrantyMonths === 1 ? "month" : "months"}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "location",
         header: "Location",
-        cell: ({ row }) => (
-          <span className="text-sm text-foreground">
-            {row.original.location || "—"}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const location = row.original.location;
+          if (!location) return <span className="text-sm text-muted-foreground">—</span>;
+          return (
+            <Badge variant="outline" className="w-fit bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400 border-slate-200 dark:border-slate-800">
+              {location}
+            </Badge>
+          );
+        },
       },
       {
         id: "actions",
@@ -605,6 +769,19 @@ export function InventoryDataTable({
           const product = row.original;
           return (
             <div className="flex items-center gap-2">
+              {isMobile && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setDetailsProduct(product);
+                    setDetailsOpen(true);
+                  }}
+                  aria-label={`View details for ${product.name}`}
+                >
+                  <IconEye className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="icon"
@@ -634,6 +811,7 @@ export function InventoryDataTable({
       adjustingStockId,
       stockAdjustmentOpen,
       stockAdjustmentValue,
+      isMobile,
     ]
   );
 
@@ -672,6 +850,9 @@ export function InventoryDataTable({
         setImagePreview(base64String);
         setEditForm((prev) => ({ ...prev, imageUrl: base64String }));
       };
+      reader.onerror = () => {
+        toast.error("Failed to read image file. Please try again.");
+      };
       reader.readAsDataURL(file);
     },
     []
@@ -701,6 +882,7 @@ export function InventoryDataTable({
           toast.success(result.message ?? "Product updated successfully.");
           setIsEditOpen(false);
           setEditProduct(null);
+          router.refresh();
         } else if (result?.errors) {
           toast.error(result.message ?? "Validation failed.");
         } else {
@@ -708,8 +890,48 @@ export function InventoryDataTable({
         }
       });
     },
-    [editForm, editProduct]
+    [editForm, editProduct, router]
   );
+
+  // Save column visibility to localStorage whenever it changes
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Only save if not in mobile mode (don't overwrite user preferences on mobile)
+      if (isMobile !== true) {
+        localStorage.setItem("inventory-column-visibility", JSON.stringify(columnVisibility));
+      }
+    }
+  }, [columnVisibility, isMobile]);
+
+  // Hide columns on mobile for better UX (only on initial mount/detection)
+  React.useEffect(() => {
+    // Only apply mobile-specific column hiding when mobile is definitively detected
+    // But don't overwrite saved preferences
+    if (isMobile === true) {
+      // Check if we have saved preferences first - don't overwrite them
+      const saved = localStorage.getItem("inventory-column-visibility");
+      if (!saved) {
+        // On mobile, hide most columns to prevent cramping (only if no saved prefs)
+        setColumnVisibility((prev) => {
+          // Only set if prev is empty (initial state)
+          if (Object.keys(prev).length === 0) {
+            return {
+              categoryName: false,
+              manufacturer: false,
+              condition: false,
+              lowStockAt: false,
+              price: false,
+              warrantyMonths: false,
+              location: false,
+            };
+          }
+          return prev; // Keep existing visibility
+        });
+      }
+    }
+    // On desktop, preserve saved preferences - don't reset to empty
+    // If isMobile is undefined, don't change visibility yet (waiting for detection)
+  }, [isMobile]);
 
   const table = useReactTable({
     data: filteredItems,
@@ -738,9 +960,27 @@ export function InventoryDataTable({
     );
   });
 
+  const outOfStockItems = filteredItems.filter((item) => {
+    return Number(item.quantity || 0) === 0;
+  });
+
+  const uniqueCategoriesCount = React.useMemo(() => {
+    const categoriesSet = new Set(
+      filteredItems.map((item) => item.categoryName).filter(Boolean)
+    );
+    return categoriesSet.size;
+  }, [filteredItems]);
+
+  const uniqueManufacturersCount = React.useMemo(() => {
+    const manufacturersSet = new Set(
+      filteredItems.map((item) => item.manufacturer).filter(Boolean)
+    );
+    return manufacturersSet.size;
+  }, [filteredItems]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Input
           placeholder="Search products"
           value={searchTerm}
@@ -750,7 +990,7 @@ export function InventoryDataTable({
           }}
           className="w-full sm:max-w-sm"
         />
-        <div className="flex items-center gap-2 sm:self-end">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap sm:self-end">
           <Badge
             variant="secondary"
             className="flex items-center gap-2 rounded-full px-3 py-1 text-sm"
@@ -771,89 +1011,140 @@ export function InventoryDataTable({
               </span>
             </Badge>
           )}
+          {lowStockItems.length > 0 && (
+            <Badge
+              variant="outline"
+              className="flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border-orange-200 dark:border-orange-800"
+            >
+              <IconAlertCircle className="h-3 w-3" />
+              Low Stock
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-400">
+                {lowStockItems.length}
+              </span>
+            </Badge>
+          )}
+          {outOfStockItems.length > 0 && (
+            <Badge
+              variant="outline"
+              className="flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400 border-red-200 dark:border-red-800"
+            >
+              Out of Stock
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400">
+                {outOfStockItems.length}
+              </span>
+            </Badge>
+          )}
+          {uniqueCategoriesCount > 0 && (
+            <Badge
+              variant="outline"
+              className="flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+            >
+              Categories
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-400">
+                {uniqueCategoriesCount}
+              </span>
+            </Badge>
+          )}
+          {uniqueManufacturersCount > 0 && (
+            <Badge
+              variant="outline"
+              className="flex items-center gap-2 rounded-full px-3 py-1 text-sm bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-400 border-purple-200 dark:border-purple-800"
+            >
+              Manufacturers
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-400">
+                {uniqueManufacturersCount}
+              </span>
+            </Badge>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant={lowStockFilter ? "default" : "outline"}
-          size="sm"
-          onClick={() => {
-            setLowStockFilter(!lowStockFilter);
-            setPagination({ ...pagination, pageIndex: 0 });
-          }}
-          className="gap-2"
-        >
-          <IconAlertCircle className="h-4 w-4" />
-          Low Stock
-        </Button>
-        <Select
-          value={categoryFilter}
-          onValueChange={(value) => {
-            setCategoryFilter(value);
-            setPagination({ ...pagination, pageIndex: 0 });
-          }}
-        >
-          <SelectTrigger className="h-9 min-w-[140px] justify-between">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="__uncategorized">Uncategorized</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={manufacturerFilter}
-          onValueChange={(value) => {
-            setManufacturerFilter(value);
-            setPagination({ ...pagination, pageIndex: 0 });
-          }}
-        >
-          <SelectTrigger className="h-9 min-w-[140px] justify-between">
-            <SelectValue placeholder="Manufacturer" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Manufacturers</SelectItem>
-            {uniqueManufacturers.map((manufacturer) => (
-              <SelectItem
-                key={manufacturer ?? "Unknown"}
-                value={manufacturer ?? "Unknown"}
-              >
-                {manufacturer}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={conditionFilter}
-          onValueChange={(value) => {
-            setConditionFilter(value);
-            setPagination({ ...pagination, pageIndex: 0 });
-          }}
-        >
-          <SelectTrigger className="h-9 min-w-[140px] justify-between">
-            <SelectValue placeholder="Condition" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Conditions</SelectItem>
-            {CONDITIONS.map((condition) => (
-              <SelectItem key={condition} value={condition}>
-                {condition.charAt(0).toUpperCase() + condition.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-2 col-span-2 justify-end flex-1 ">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        {/* Mobile: Stack filters vertically, Desktop: Horizontal */}
+        <div className="flex flex-wrap items-center gap-2 sm:flex-1">
+          <Button
+            variant={lowStockFilter ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setLowStockFilter(!lowStockFilter);
+              setPagination({ ...pagination, pageIndex: 0 });
+            }}
+            className="gap-2 shrink-0"
+          >
+            <IconAlertCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Low Stock</span>
+            <span className="sm:hidden">Low</span>
+          </Button>
+          <Select
+            value={categoryFilter}
+            onValueChange={(value) => {
+              setCategoryFilter(value);
+              setPagination({ ...pagination, pageIndex: 0 });
+            }}
+          >
+            <SelectTrigger className="h-9 w-full sm:w-[140px] sm:min-w-[140px] justify-between">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="__uncategorized">Uncategorized</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={manufacturerFilter}
+            onValueChange={(value) => {
+              setManufacturerFilter(value);
+              setPagination({ ...pagination, pageIndex: 0 });
+            }}
+          >
+            <SelectTrigger className="h-9 w-full sm:w-[140px] sm:min-w-[140px] justify-between">
+              <SelectValue placeholder="Manufacturer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Manufacturers</SelectItem>
+              {uniqueManufacturers.map((manufacturer) => (
+                <SelectItem
+                  key={manufacturer ?? "Unknown"}
+                  value={manufacturer ?? "Unknown"}
+                >
+                  {manufacturer}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={conditionFilter}
+            onValueChange={(value) => {
+              setConditionFilter(value);
+              setPagination({ ...pagination, pageIndex: 0 });
+            }}
+          >
+            <SelectTrigger className="h-9 w-full sm:w-[140px] sm:min-w-[140px] justify-between">
+              <SelectValue placeholder="Condition" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Conditions</SelectItem>
+              {CONDITIONS.map((condition) => (
+                <SelectItem key={condition} value={condition}>
+                  {condition.charAt(0).toUpperCase() + condition.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Action buttons - separate row on mobile, inline on desktop */}
+        <div className="flex items-center gap-2 sm:justify-end sm:flex-shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-initial">
                 <IconFilter className="h-4 w-4" />
-                Columns
+                <span className="hidden sm:inline">Columns</span>
+                <span className="sm:hidden">Cols</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
@@ -877,10 +1168,33 @@ export function InventoryDataTable({
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button className="gap-2" onClick={handleExport}>
-            <IconDownload className="h-4 w-4" />
-            Export CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="gap-2 flex-1 sm:flex-initial">
+                <IconDownload className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+                <span className="sm:hidden">Export</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleExportCSV}
+                className="cursor-pointer"
+              >
+                <IconDownload className="h-4 w-4 mr-2" />
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleExportExcel}
+                className="cursor-pointer"
+              >
+                <IconFileSpreadsheet className="h-4 w-4 mr-2" />
+                Export as Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -894,9 +1208,10 @@ export function InventoryDataTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader className="bg-muted">
+      <div className="rounded-lg border overflow-hidden w-full">
+        <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 400px)", minHeight: "600px" }}>
+          <Table className="w-full" style={{ minWidth: "800px" }}>
+            <TableHeader className="bg-muted sticky top-0 z-10">
             {table
               .getHeaderGroups()
               .map((headerGroup: HeaderGroup<Product>) => (
@@ -925,7 +1240,7 @@ export function InventoryDataTable({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell: Cell<Product, unknown>) => (
-                    <TableCell key={cell.id} className="py-3">
+                    <TableCell key={cell.id} className="py-4">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -946,6 +1261,7 @@ export function InventoryDataTable({
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
@@ -1317,6 +1633,198 @@ export function InventoryDataTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Product Details Drawer for Mobile */}
+      <Drawer open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DrawerContent className="max-h-[90vh]">
+          {detailsProduct && (
+            <>
+              <DrawerHeader>
+                <div className="flex items-start gap-4">
+                  {detailsProduct.imageUrl ? (
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border">
+                      <Image
+                        src={detailsProduct.imageUrl}
+                        alt={detailsProduct.name}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted">
+                      <IconPackage className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <DrawerTitle className="text-lg font-semibold truncate">
+                      {detailsProduct.name}
+                    </DrawerTitle>
+                    <DrawerDescription className="mt-1">
+                      {detailsProduct.sku && (
+                        <span className="block text-xs">SKU: {detailsProduct.sku}</span>
+                      )}
+                      {detailsProduct.model && (
+                        <span className="block text-xs">Model: {detailsProduct.model}</span>
+                      )}
+                    </DrawerDescription>
+                  </div>
+                </div>
+              </DrawerHeader>
+
+              <div className="overflow-y-auto px-4 pb-4">
+                <div className="space-y-4">
+                  {/* Basic Info */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <IconInfoCircle className="h-4 w-4" />
+                      Product Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Category:</span>
+                        <div className="mt-1">
+                          <Badge variant="outline" className="w-fit">
+                            {detailsProduct.categoryName || "Uncategorized"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Manufacturer:</span>
+                        <p className="mt-1 font-medium">
+                          {detailsProduct.manufacturer || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Condition:</span>
+                        <div className="mt-1">
+                          <Badge
+                            variant="secondary"
+                            className={`w-fit ${
+                              CONDITION_BADGES[detailsProduct.condition || "new"] || "bg-muted"
+                            }`}
+                          >
+                            {(detailsProduct.condition || "new")
+                              .charAt(0)
+                              .toUpperCase() +
+                              (detailsProduct.condition || "new").slice(1)}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Location:</span>
+                        <p className="mt-1 font-medium">
+                          {detailsProduct.location || "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Inventory Info */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold">Inventory</h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Quantity:</span>
+                        <p className="mt-1 font-semibold text-lg">
+                          {detailsProduct.quantity}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Low Stock At:</span>
+                        <p className="mt-1 font-medium">
+                          {detailsProduct.lowStockAt
+                            ? `${detailsProduct.lowStockAt} units`
+                            : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Price:</span>
+                        <p className="mt-1 font-semibold text-lg flex items-center gap-1">
+                          <IconCurrencyPeso className="size-4" />
+                          {Number(detailsProduct.price).toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Warranty:</span>
+                        <p className="mt-1 font-medium">
+                          {detailsProduct.warrantyMonths
+                            ? `${detailsProduct.warrantyMonths} months`
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Info */}
+                  {(detailsProduct.supplier ||
+                    detailsProduct.specs ||
+                    detailsProduct.compatibility ||
+                    detailsProduct.notes) && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        {detailsProduct.supplier && (
+                          <div>
+                            <span className="text-sm text-muted-foreground">Supplier:</span>
+                            <p className="mt-1 font-medium">{detailsProduct.supplier}</p>
+                          </div>
+                        )}
+                        {detailsProduct.specs && (
+                          <div>
+                            <span className="text-sm text-muted-foreground">
+                              Specifications:
+                            </span>
+                            <p className="mt-1 text-sm">{detailsProduct.specs}</p>
+                          </div>
+                        )}
+                        {detailsProduct.compatibility && (
+                          <div>
+                            <span className="text-sm text-muted-foreground">
+                              Compatibility:
+                            </span>
+                            <p className="mt-1 text-sm">{detailsProduct.compatibility}</p>
+                          </div>
+                        )}
+                        {detailsProduct.notes && (
+                          <div>
+                            <span className="text-sm text-muted-foreground">Notes:</span>
+                            <p className="mt-1 text-sm">{detailsProduct.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <DrawerFooter className="flex-row gap-2 sm:flex-row">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDetailsOpen(false);
+                  }}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    handleEditClick(detailsProduct);
+                  }}
+                  className="flex-1"
+                >
+                  <IconEdit className="h-4 w-4 mr-2" />
+                  Edit Product
+                </Button>
+              </DrawerFooter>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

@@ -47,15 +47,6 @@ export default async function AddProductPage() {
       <SidebarInset>
         <SiteHeader action={<AddCategoryButton />} />
         <main className="p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-accent-foreground">
-              Add Product
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Complete the form below to add a new product to your inventory.
-              Use categories to organize items efficiently.
-            </p>
-          </div>
           <div className="max-w-4xl justify-center mx-auto">
             <AddProductForm categories={categoryOptions} />
           </div>

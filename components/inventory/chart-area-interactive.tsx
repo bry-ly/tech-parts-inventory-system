@@ -50,58 +50,103 @@ export function ChartAreaInteractive({
     }
   }, [isMobile]);
 
+  const timeRangeOptions = React.useMemo(
+    () => [
+      { value: "7d", label: "Last 7 days", days: 7 },
+      { value: "30d", label: "Last 30 days", days: 30 },
+      { value: "90d", label: "Last 3 months", days: 90 },
+      { value: "180d", label: "Last 6 months", days: 180 },
+      { value: "365d", label: "Last year", days: 365 },
+    ],
+    []
+  );
+
   const filteredData = React.useMemo(() => {
     const refDate = new Date();
-    let daysToSubtract = 90;
-    if (timeRange === "30d") daysToSubtract = 30;
-    else if (timeRange === "7d") daysToSubtract = 7;
+    const selectedOption = timeRangeOptions.find((opt) => opt.value === timeRange);
+    const daysToSubtract = selectedOption?.days ?? 90;
     const startDate = new Date(refDate);
     startDate.setDate(startDate.getDate() - daysToSubtract);
     return chartData.filter((item) => new Date(item.date) >= startDate);
-  }, [chartData, timeRange]);
+  }, [chartData, timeRange, timeRangeOptions]);
+
+  // Show dropdown for 1 month (30d) and above
+  const showDropdown = React.useMemo(() => {
+    const selectedOption = timeRangeOptions.find((opt) => opt.value === timeRange);
+    return (selectedOption?.days ?? 0) >= 30;
+  }, [timeRange, timeRangeOptions]);
 
   return (
     <Card className="@container/card">
       <CardHeader>
         <CardTitle>Inventory Value Trend</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block">
-            For the last 3 months
-          </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
+          {(() => {
+            const selectedOption = timeRangeOptions.find((opt) => opt.value === timeRange);
+            const description = selectedOption?.label ?? "Last 3 months";
+            return (
+              <>
+                <span className="hidden @[540px]/card:block">
+                  Daily inventory value for {description.toLowerCase()}
+                </span>
+                <span className="@[540px]/card:hidden">{description}</span>
+              </>
+            );
+          })()}
         </CardDescription>
         <CardAction>
-          <ToggleGroup
-            type="single"
-            value={timeRange}
-            onValueChange={setTimeRange}
-            variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
-          >
-            <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
-          </ToggleGroup>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
-              size="sm"
-              aria-label="Select a value"
-            >
-              <SelectValue placeholder="Last 3 months" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">
-                Last 3 months
-              </SelectItem>
-              <SelectItem value="30d" className="rounded-lg">
-                Last 30 days
-              </SelectItem>
-              <SelectItem value="7d" className="rounded-lg">
-                Last 7 days
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          {showDropdown ? (
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger
+                className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
+                size="sm"
+                aria-label="Select time range"
+              >
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {timeRangeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <>
+              <ToggleGroup
+                type="single"
+                value={timeRange}
+                onValueChange={setTimeRange}
+                variant="outline"
+                className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
+              >
+                {timeRangeOptions
+                  .filter((option) => option.days < 30)
+                  .map((option) => (
+                    <ToggleGroupItem key={option.value} value={option.value}>
+                      {option.label}
+                    </ToggleGroupItem>
+                  ))}
+              </ToggleGroup>
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger
+                  className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+                  size="sm"
+                  aria-label="Select time range"
+                >
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {timeRangeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
         </CardAction>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">

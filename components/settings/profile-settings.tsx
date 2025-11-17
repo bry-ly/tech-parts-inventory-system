@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { IconCamera, IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { updateUserProfile } from "@/lib/action/user";
 
 interface ProfileSettingsProps {
   user: {
@@ -25,6 +27,8 @@ interface ProfileSettingsProps {
 }
 
 export function ProfileSettings({ user }: ProfileSettingsProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
     name: user.name || "",
     email: user.email,
@@ -33,7 +37,6 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
     location: "",
   });
   const [imagePreview, setImagePreview] = useState<string | null>(user.image);
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -78,10 +81,38 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
       return;
     }
 
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    toast.success("Profile updated successfully");
-    setIsLoading(false);
+    startTransition(async () => {
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name.trim());
+      formDataToSend.append("email", formData.email.trim());
+      // If imagePreview is null and it was different from original, send empty string to remove it
+      // Otherwise, send the imagePreview value (which could be base64 or URL)
+      if (imagePreview !== user.image) {
+        formDataToSend.append("image", imagePreview || "");
+      }
+
+      try {
+        const result = await updateUserProfile(formDataToSend);
+        if (result?.success) {
+          toast.success(result.message ?? "Profile updated successfully");
+          router.refresh();
+        } else if (result?.errors) {
+          const errorMessages = Object.values(result.errors).flat().join(", ");
+          toast.error(result.message ?? "Validation failed", {
+            description: errorMessages,
+          });
+        } else {
+          toast.error(result?.message ?? "Failed to update profile.");
+        }
+      } catch (error) {
+        toast.error("Failed to update profile.", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred.",
+        });
+      }
+    });
   };
 
   const handleCancel = () => {
@@ -218,12 +249,16 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
         </div>
 
         <div className="flex justify-end gap-4">
-          <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isPending}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
+          <Button onClick={handleSave} disabled={isPending}>
             <IconDeviceFloppy className="size-4 mr-2" />
-            {isLoading ? "Saving..." : "Save Changes"}
+            {isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </CardContent>

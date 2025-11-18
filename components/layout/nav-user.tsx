@@ -40,16 +40,22 @@ export function NavUser({
     if (isSigningOut) return;
     setIsSigningOut(true);
     try {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push("/sign-in");
-          },
-        },
-      });
+      const { error } = await authClient.signOut();
+      if (error) {
+        toast.error("Failed to sign out.", {
+          description: error.message || "An error occurred while signing out.",
+        });
+        return;
+      }
       toast.success("Signed out successfully.");
-    } catch {
-      toast.error("Failed to sign out.");
+      router.push("/sign-in");
+      router.refresh();
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to sign out.";
+      toast.error("Failed to sign out.", {
+        description: errorMessage,
+      });
     } finally {
       setIsSigningOut(false);
     }

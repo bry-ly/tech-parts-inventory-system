@@ -13,7 +13,12 @@ export const metadata = {
   title: "Categories | Hardware Management",
 };
 
-export default async function CategoriesPage() {
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function CategoriesPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || !session.user) {
     redirect("/sign-in");
@@ -106,9 +111,12 @@ export default async function CategoriesPage() {
           <div className="space-y-8 p-8">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Categories</h1>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Categories
+                </h1>
                 <p className="text-muted-foreground">
-                  Create, rename, or delete categories to keep your inventory organized.
+                  Create, rename, or delete categories to keep your inventory
+                  organized.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -124,12 +132,15 @@ export default async function CategoriesPage() {
               </div>
             </div>
 
-            <CategoryManager categories={categorySummaries} />
+            <CategoryManager
+              categories={categorySummaries}
+              selectedCategory={
+                (searchParams.selectedCategory as string) || undefined
+              }
+            />
           </div>
         </main>
       </SidebarInset>
     </SidebarProvider>
   );
 }
-
-

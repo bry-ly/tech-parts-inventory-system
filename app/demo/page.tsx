@@ -1,4 +1,4 @@
-import type React from "react";
+import React, { Suspense } from "react";
 import { DemoSidebar } from "@/components/layout/demo-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 // Demo data
 const demoData = {
   totalProducts: 127,
-  totalInventoryValue: 2456789.50,
+  totalInventoryValue: 2456789.5,
   lowStockCount: 8,
   recentProducts: 12,
   totalUnits: 3420,
@@ -34,24 +34,24 @@ const generateDemoChartData = () => {
   const chartData: { date: string; value: number }[] = [];
   const currentDate = new Date();
   const baseValue = 1500000;
-  
+
   for (let i = 0; i < days; i++) {
     const date = new Date(currentDate);
     date.setDate(date.getDate() - (days - i - 1));
     date.setHours(0, 0, 0, 0);
     const dateStr = date.toISOString().split("T")[0];
-    
+
     // Simulate gradual growth with some variation
     const progress = i / days;
     const variation = Math.sin(progress * Math.PI * 4) * 50000;
-    const value = baseValue + (progress * 1000000) + variation;
-    
+    const value = baseValue + progress * 1000000 + variation;
+
     chartData.push({
       date: dateStr,
       value: Math.max(0, value),
     });
   }
-  
+
   return chartData;
 };
 
@@ -62,7 +62,7 @@ const demoCategoryBreakdown = [
   { category: "Motherboards", count: 22, value: 330000 },
   { category: "Memory", count: 30, value: 240000 },
   { category: "Storage", count: 20, value: 180000 },
-  { category: "Power Supplies", count: 12, value: 541789.50 },
+  { category: "Power Supplies", count: 12, value: 541789.5 },
 ];
 
 // Demo manufacturer breakdown
@@ -71,14 +71,14 @@ const demoManufacturerBreakdown = [
   { manufacturer: "AMD", count: 28, value: 700000 },
   { manufacturer: "NVIDIA", count: 15, value: 450000 },
   { manufacturer: "ASUS", count: 20, value: 300000 },
-  { manufacturer: "Corsair", count: 18, value: 131789.50 },
+  { manufacturer: "Corsair", count: 18, value: 131789.5 },
   { manufacturer: "Samsung", count: 11, value: 0 },
 ];
 
 const demoUser = {
   name: "Demo User",
   email: "demo@example.com",
-  avatar: "/avatars/placeholder.svg",
+  avatar: "/icon.png",
 };
 
 export default function DemoDashboardPage() {
@@ -100,21 +100,19 @@ export default function DemoDashboardPage() {
           <div className="space-y-8 p-8">
             <div>
               <div className="flex items-center gap-4 mb-4">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                >
+                <Button asChild variant="outline" size="sm" className="gap-2">
                   <Link href="/">
                     <ArrowLeft className="size-4" />
                     Back to Home
                   </Link>
                 </Button>
               </div>
-              <h1 className="text-3xl font-bold">Welcome to the Demo Dashboard</h1>
+              <h1 className="text-3xl font-bold">
+                Welcome to the Demo Dashboard
+              </h1>
               <p className="mt-1 text-muted-foreground">
-                This is a preview of the inventory management system with sample data
+                This is a preview of the inventory management system with sample
+                data
               </p>
             </div>
 
@@ -127,7 +125,9 @@ export default function DemoDashboardPage() {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <ChartAreaInteractive chartData={chartData} />
+                <Suspense fallback={<div>Loading chart...</div>}>
+                  <ChartAreaInteractive chartData={chartData} />
+                </Suspense>
               </div>
               <div className="rounded-lg border bg-card p-6 shadow-sm">
                 <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
@@ -162,12 +162,8 @@ export default function DemoDashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <CategoryBreakdownChart
-                data={demoCategoryBreakdown}
-              />
-              <ManufacturerBreakdownChart
-                data={demoManufacturerBreakdown}
-              />
+              <CategoryBreakdownChart data={demoCategoryBreakdown} />
+              <ManufacturerBreakdownChart data={demoManufacturerBreakdown} />
             </div>
           </div>
         </main>
@@ -175,4 +171,3 @@ export default function DemoDashboardPage() {
     </SidebarProvider>
   );
 }
-

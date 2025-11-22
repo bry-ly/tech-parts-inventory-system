@@ -11,6 +11,7 @@ const menuItems = [
   { name: "About", href: "#content" },
   { name: "Team", href: "#team" },
   { name: "Features", href: "#features" },
+  { name: "Docs", href: "https://techparts-docs.vercel.app" },
 ];
 
 export const HeroHeader = () => {

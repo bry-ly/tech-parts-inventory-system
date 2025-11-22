@@ -1,11 +1,17 @@
 import { cn } from "@/lib/utils";
-import { Cpu } from "lucide-react";
+import Image from "next/image";
 
 export const Logo = ({ className }: { className?: string }) => {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <div className="relative">
-        <Cpu className="h-8 w-8 text-primary" strokeWidth={2} />
+        <Image
+          src="/icon.png"
+          alt="Logo"
+          width={32}
+          height={32}
+          className="h-8 w-8"
+        />
       </div>
       <span className="text-xl font-bold text-foreground">Tech Parts</span>
     </div>
@@ -14,12 +20,24 @@ export const Logo = ({ className }: { className?: string }) => {
 
 export const LogoIcon = ({ className }: { className?: string }) => {
   return (
-    <Cpu className={cn("size-8 text-primary", className)} strokeWidth={2} />
+    <Image
+      src="/icon.png"
+      alt="Logo"
+      width={32}
+      height={32}
+      className={cn("size-8", className)}
+    />
   );
 };
 
 export const LogoStroke = ({ className }: { className?: string }) => {
   return (
-    <Cpu className={cn("size-8 text-primary", className)} strokeWidth={1.5} />
+    <Image
+      src="/icon.png"
+      alt="Logo"
+      width={32}
+      height={32}
+      className={cn("size-8", className)}
+    />
   );
 };

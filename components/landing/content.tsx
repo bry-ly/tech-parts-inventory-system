@@ -29,7 +29,7 @@ export default function ContentSection() {
 
           <div className="relative space-y-4">
             <p className="text-muted-foreground">
-              Tech Parts is more than just inventory software.{" "}
+              Velos Inventory is more than just inventory software.{" "}
               <span className="text-accent-foreground font-bold">
                 It&apos;s a complete ecosystem
               </span>{" "}
@@ -44,18 +44,16 @@ export default function ContentSection() {
             <div className="pt-6">
               <blockquote className="border-l-4 pl-4">
                 <p>
-                  Using Tech Parts has transformed how we manage inventory.
-                  The real-time tracking and low-stock alerts have eliminated
-                  stockouts and saved us countless hours. It&apos;s the perfect
-                  balance of power and simplicity.
+                  Using Inventory System has transformed how we manage
+                  inventory. The real-time tracking and low-stock alerts have
+                  eliminated stockouts and saved us countless hours. It&apos;s
+                  the perfect balance of power and simplicity.
                 </p>
 
                 <div className="mt-6 space-y-3">
-                  <cite className="block font-medium">
-                    Bryan Palay, Leader
-                  </cite>
+                  <cite className="block font-medium">Bryan Palay, Leader</cite>
                   <div className="text-sm text-muted-foreground">
-                    Tech Parts
+                    Inventory System
                   </div>
                 </div>
               </blockquote>

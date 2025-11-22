@@ -8,8 +8,8 @@ import { redirect } from "next/navigation";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign Up - Tech Parts",
-  description: "Your one-stop shop for tech parts inventory management.",
+  title: "Sign Up - Velos Inventory",
+  description: "Your one-stop shop for inventory management.",
 };
 
 export default async function SignupPage() {
@@ -38,10 +38,10 @@ export default async function SignupPage() {
               alt="Logo"
               width={32}
               height={32}
-              className="size-8"
+              className="size-10"
             />
           </div>
-          <span className="text-primary font-bold">Tech Parts</span>
+          <span className="font-bold">Velos</span>
         </Link>
         <SignupForm />
       </div>

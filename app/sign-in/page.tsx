@@ -8,13 +8,20 @@ import { redirect } from "next/navigation";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sign In - Tech Parts",
-  description: "Your one-stop shop for tech parts inventory management.",
+  title: "Sign In - Velos Inventory ",
+  description: "Your one-stop shop for inventory management.",
 };
-export default async function SignInPage() {
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function SignInPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const callbackUrl = (searchParams.callbackUrl as string) || "/dashboard";
   const session = await auth.api.getSession({ headers: await headers() });
+
   if (session?.user) {
-    redirect("/dashboard");
+    redirect(callbackUrl);
   }
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-2 overflow-hidden p-6 md:p-10">
@@ -36,12 +43,12 @@ export default async function SignInPage() {
               alt="Logo"
               width={32}
               height={32}
-              className="size-8"
+              className="size-10"
             />
           </div>
-          <span className="text-primary font-bold">Tech Parts</span>
+          <span className=" font-bold">Velos</span>
         </Link>
-        <SignInForm />
+        <SignInForm callbackUrl={callbackUrl} />
       </div>
     </div>
   );

@@ -8,7 +8,9 @@ export async function middleware(request: NextRequest) {
   });
 
   if (!session) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    const url = new URL("/sign-in", request.url);
+    url.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
@@ -20,7 +22,5 @@ export const config = {
     "/dashboard/:path*",
     "/add-product/:path*",
     "/settings/:path*",
-    "/organization/:path*",
-    "/invitation/:path*",
   ],
 };

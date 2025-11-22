@@ -23,7 +23,7 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-import { Cpu } from "lucide-react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -82,7 +82,10 @@ export function DemoSidebar({
 }: DemoSidebarProps & React.ComponentProps<typeof Sidebar>) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    url: string
+  ) => {
     // Allow navigation to demo page itself
     if (url === "/demo" || url === "/") {
       return;
@@ -103,7 +106,13 @@ export function DemoSidebar({
                 className="data-[slot=sidebar-menu-button]:p-1.5!"
               >
                 <Link href="/demo">
-                  <Cpu className="size-5!" />
+                  <Image
+                    src="/icon.png"
+                    alt="Logo"
+                    width={20}
+                    height={20}
+                    className="size-5!"
+                  />
                   <span className="text-base font-semibold">Tech Parts</span>
                 </Link>
               </SidebarMenuButton>
@@ -116,11 +125,11 @@ export function DemoSidebar({
               <SidebarMenu>
                 {data.navMain.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={item.title}
-                    >
-                      <a href={item.url} onClick={(e) => handleNavClick(e, item.url)}>
+                    <SidebarMenuButton asChild tooltip={item.title}>
+                      <a
+                        href={item.url}
+                        onClick={(e) => handleNavClick(e, item.url)}
+                      >
                         {item.icon && <item.icon />}
                         <span>{item.title}</span>
                       </a>
@@ -135,11 +144,11 @@ export function DemoSidebar({
               <SidebarMenu>
                 {data.navSecondary.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      size="sm"
-                    >
-                      <a href={item.url} onClick={(e) => handleNavClick(e, item.url)}>
+                    <SidebarMenuButton asChild size="sm">
+                      <a
+                        href={item.url}
+                        onClick={(e) => handleNavClick(e, item.url)}
+                      >
                         <item.icon />
                         <span>{item.title}</span>
                       </a>
@@ -160,23 +169,17 @@ export function DemoSidebar({
           <DialogHeader>
             <DialogTitle>Sign In Required</DialogTitle>
             <DialogDescription>
-              To access this feature, please sign in to your account or create a new one.
+              To access this feature, please sign in to your account or create a
+              new one.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              asChild
-              className="w-full sm:w-auto"
-            >
+            <Button variant="outline" asChild className="w-full sm:w-auto">
               <Link href="/sign-in" onClick={() => setDialogOpen(false)}>
                 Sign In
               </Link>
             </Button>
-            <Button
-              asChild
-              className="w-full sm:w-auto"
-            >
+            <Button asChild className="w-full sm:w-auto">
               <Link href="/sign-up" onClick={() => setDialogOpen(false)}>
                 Create Account
               </Link>
@@ -187,4 +190,3 @@ export function DemoSidebar({
     </>
   );
 }
-

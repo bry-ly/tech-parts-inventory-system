@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
@@ -38,11 +39,23 @@ const chartConfig = {
 
 export function ChartAreaInteractive({
   chartData,
+  dateRange = "90d",
 }: {
   chartData: { date: string; value: number }[];
+  dateRange?: string;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = React.useState("90d");
+  const [timeRange, setTimeRange] = React.useState(dateRange);
+
+  const handleTimeRangeChange = (value: string) => {
+    setTimeRange(value);
+    const params = new URLSearchParams(searchParams);
+    params.set("dateRange", value);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   React.useEffect(() => {
     if (isMobile) {
@@ -63,7 +76,9 @@ export function ChartAreaInteractive({
 
   const filteredData = React.useMemo(() => {
     const refDate = new Date();
-    const selectedOption = timeRangeOptions.find((opt) => opt.value === timeRange);
+    const selectedOption = timeRangeOptions.find(
+      (opt) => opt.value === timeRange
+    );
     const daysToSubtract = selectedOption?.days ?? 90;
     const startDate = new Date(refDate);
     startDate.setDate(startDate.getDate() - daysToSubtract);
@@ -72,7 +87,9 @@ export function ChartAreaInteractive({
 
   // Show dropdown for 1 month (30d) and above
   const showDropdown = React.useMemo(() => {
-    const selectedOption = timeRangeOptions.find((opt) => opt.value === timeRange);
+    const selectedOption = timeRangeOptions.find(
+      (opt) => opt.value === timeRange
+    );
     return (selectedOption?.days ?? 0) >= 30;
   }, [timeRange, timeRangeOptions]);
 
@@ -82,7 +99,9 @@ export function ChartAreaInteractive({
         <CardTitle>Inventory Value Trend</CardTitle>
         <CardDescription>
           {(() => {
-            const selectedOption = timeRangeOptions.find((opt) => opt.value === timeRange);
+            const selectedOption = timeRangeOptions.find(
+              (opt) => opt.value === timeRange
+            );
             const description = selectedOption?.label ?? "Last 3 months";
             return (
               <>
@@ -96,7 +115,7 @@ export function ChartAreaInteractive({
         </CardDescription>
         <CardAction>
           {showDropdown ? (
-            <Select value={timeRange} onValueChange={setTimeRange}>
+            <Select value={timeRange} onValueChange={handleTimeRangeChange}>
               <SelectTrigger
                 className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
                 size="sm"
@@ -106,7 +125,11 @@ export function ChartAreaInteractive({
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {timeRangeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="rounded-lg"
+                  >
                     {option.label}
                   </SelectItem>
                 ))}
@@ -117,7 +140,7 @@ export function ChartAreaInteractive({
               <ToggleGroup
                 type="single"
                 value={timeRange}
-                onValueChange={setTimeRange}
+                onValueChange={handleTimeRangeChange}
                 variant="outline"
                 className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
               >
@@ -129,7 +152,7 @@ export function ChartAreaInteractive({
                     </ToggleGroupItem>
                   ))}
               </ToggleGroup>
-              <Select value={timeRange} onValueChange={setTimeRange}>
+              <Select value={timeRange} onValueChange={handleTimeRangeChange}>
                 <SelectTrigger
                   className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
                   size="sm"
@@ -139,7 +162,11 @@ export function ChartAreaInteractive({
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   {timeRangeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="rounded-lg"
+                    >
                       {option.label}
                     </SelectItem>
                   ))}

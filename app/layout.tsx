@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tech Parts",
-  description: "Your one-stop shop for tech parts inventory management.",
+  title: "Velos",
+  description: "Velos - A modern inventory management system"
 };
 
 export default function RootLayout({
@@ -36,7 +36,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <Toaster position="top-right" />
+          <Toaster position="top-right" richColors />
         </ThemeProvider>
       </body>
     </html>

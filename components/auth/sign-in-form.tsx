@@ -32,12 +32,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInInput } from "@/lib/validations/auth";
 import { Spinner } from "@/components/ui/spinner";
-import { Loader} from "lucide-react";
+import { Loader } from "lucide-react";
 
 export function SignInForm({
   className,
+  callbackUrl = "/dashboard",
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { callbackUrl?: string }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
@@ -57,7 +58,7 @@ export function SignInForm({
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: callbackUrl,
       });
     } catch (err) {
       const errorMessage =
@@ -76,6 +77,7 @@ export function SignInForm({
       const { error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
+        callbackURL: callbackUrl,
       });
       if (error) {
         toast.error("Sign in failed", {
@@ -90,7 +92,7 @@ export function SignInForm({
         // Show loading state and redirect to dashboard
         setRedirecting(true);
         setTimeout(() => {
-          window.location.href = "/dashboard";
+          window.location.href = callbackUrl;
         }, 500);
       }
     } catch (err) {

@@ -142,7 +142,10 @@ export function SignupForm({
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-4">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="mt-4 space-y-4"
+            >
               <FormField
                 control={form.control}
                 name="name"
@@ -150,10 +153,7 @@ export function SignupForm({
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Tech Parts"
-                        {...field}
-                      />
+                      <Input placeholder="Velos Inven" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -194,7 +194,9 @@ export function SignupForm({
                             variant="ghost"
                             size="icon"
                             className="absolute inset-y-0 right-0 mr-1 flex h-full w-8 items-center justify-center px-0"
-                            onClick={() => setShowPassword((previous) => !previous)}
+                            onClick={() =>
+                              setShowPassword((previous) => !previous)
+                            }
                             aria-label={
                               showPassword ? "Hide password" : "Show password"
                             }
@@ -202,7 +204,10 @@ export function SignupForm({
                             {showPassword ? (
                               <IconEye className="h-4 w-4" aria-hidden="true" />
                             ) : (
-                              <IconEyeOff className="h-4 w-4" aria-hidden="true" />
+                              <IconEyeOff
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
                             )}
                           </Button>
                         </div>
@@ -240,7 +245,10 @@ export function SignupForm({
                             {showConfirmPassword ? (
                               <IconEye className="h-4 w-4" aria-hidden="true" />
                             ) : (
-                              <IconEyeOff className="h-4 w-4" aria-hidden="true" />
+                              <IconEyeOff
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
                             )}
                           </Button>
                         </div>

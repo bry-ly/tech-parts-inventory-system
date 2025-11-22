@@ -1,4 +1,4 @@
-import { Cpu } from "lucide-react";
+import Image from "next/image";
 
 import { SignupForm } from "@/components/auth/sign-up-form";
 import Link from "next/link";
@@ -8,10 +8,10 @@ import { redirect } from "next/navigation";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Sign Up - Tech Parts",
-    description: "Your one-stop shop for tech parts inventory management.",
-  };
-  
+  title: "Sign Up - Tech Parts",
+  description: "Your one-stop shop for tech parts inventory management.",
+};
+
 export default async function SignupPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user) {
@@ -19,7 +19,7 @@ export default async function SignupPage() {
   }
 
   return (
-    <div className="relative flex min-h-svh lg:h-screen flex-col items-center justify-center gap-6 overflow-hidden p-6 md:p-10">
+    <div className="relative flex min-h-svh lg:h-screen flex-col items-center justify-center gap-2 overflow-hidden p-6 md:p-10">
       {/* Decorative Background Gradients with Animation */}
       <div aria-hidden className="absolute inset-0 isolate contain-strict">
         <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)] animate-[pulse_8s_ease-in-out_infinite]" />
@@ -27,15 +27,21 @@ export default async function SignupPage() {
         <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] animate-[pulse_7s_ease-in-out_infinite_2s]" />
       </div>
 
-      <div className="relative z-10 flex w-full max-w-sm flex-col gap-6">
+      <div className="relative z-10 flex w-full max-w-sm flex-col gap-2">
         <Link
           href="/"
           className="flex items-center gap-2 self-center font-medium"
         >
-          <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-            <Cpu className="size-4" />
+          <div className=" text-primary-foreground flex size-10 items-center justify-center rounded-md">
+            <Image
+              src="/icon.png"
+              alt="Logo"
+              width={32}
+              height={32}
+              className="size-8"
+            />
           </div>
-          Tech Parts
+          <span className="text-primary font-bold">Tech Parts</span>
         </Link>
         <SignupForm />
       </div>

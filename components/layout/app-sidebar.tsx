@@ -138,7 +138,7 @@ export function AppSidebar({
                   height={20}
                   className="size-5!"
                 />
-                <span className="text-base font-semibold">Tech Parts</span>
+                <span className="text-base font-semibold">Inventory Dashboard</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

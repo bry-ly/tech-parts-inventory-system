@@ -13,7 +13,12 @@ export const metadata: Metadata = {
   title: "Settings | Hardware Inventory Management",
 };
 
-export default async function SettingsPage() {
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function SettingsPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || !session.user) {
     redirect("/sign-in");
@@ -64,6 +69,7 @@ export default async function SettingsPage() {
                 image: user.image ?? null,
               }}
               session={sessionInfo}
+              defaultTab={(searchParams.tab as string) || "profile"}
             />
           </div>
         </main>

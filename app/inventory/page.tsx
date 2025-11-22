@@ -17,7 +17,12 @@ export const metadata: Metadata = {
   title: "Inventory | Hardware Management",
 };
 
-export default async function InventoryPage() {
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function InventoryPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || !session.user) {
     redirect("/sign-in");
@@ -106,7 +111,7 @@ export default async function InventoryPage() {
                         <IconTags className="h-4 w-4" />
                         Add Category
                       </Button>
-                  </Link>
+                    </Link>
                     <Link href="/add-product">
                       <Button className="gap-2">
                         <IconPlus className="h-4 w-4" />
@@ -123,6 +128,20 @@ export default async function InventoryPage() {
                     id,
                     name,
                   }))}
+                  initialFilters={{
+                    search: (searchParams.search as string) ?? "",
+                    category: (searchParams.category as string) ?? "all",
+                    manufacturer:
+                      (searchParams.manufacturer as string) ?? "all",
+                    condition: (searchParams.condition as string) ?? "all",
+                    lowStock: searchParams.lowStock === "true",
+                    page: searchParams.page
+                      ? parseInt(searchParams.page as string, 10)
+                      : 0,
+                    pageSize: searchParams.pageSize
+                      ? parseInt(searchParams.pageSize as string, 10)
+                      : 12,
+                  }}
                 />
               </div>
             </div>

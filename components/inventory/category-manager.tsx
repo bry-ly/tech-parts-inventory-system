@@ -1,9 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { IconEdit, IconTrash, IconPlus, IconChevronDown, IconCurrencyPeso, IconPackage, IconMapPin, IconBuildingStore, IconShield, IconFileText } from "@tabler/icons-react";
+import {
+  IconEdit,
+  IconTrash,
+  IconPlus,
+  IconChevronDown,
+  IconCurrencyPeso,
+  IconPackage,
+  IconMapPin,
+  IconBuildingStore,
+  IconShield,
+  IconFileText,
+} from "@tabler/icons-react";
 
 import { deleteCategory, updateCategory } from "@/lib/action/category";
 import { Button } from "@/components/ui/button";
@@ -60,15 +71,48 @@ type CategorySummary = {
   products: Product[];
 };
 
-export function CategoryManager({ categories }: { categories: CategorySummary[] }) {
+export function CategoryManager({
+  categories,
+  selectedCategory,
+}: {
+  categories: CategorySummary[];
+  selectedCategory?: string;
+}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [openCategories, setOpenCategories] = useState<Set<string>>(
+    new Set(selectedCategory ? [selectedCategory] : [])
+  );
+
+  // Update URL when open categories change (optional: only if single selection desired,
+  // but for multiple collapsible, URL might get long. Let's just sync the *last* opened one or keep it simple)
+  // Actually, let's just support single selection in URL for now to match the requirement "highlight or expand a specific category"
+
+  const handleOpenChange = (categoryId: string, isOpen: boolean) => {
+    const newOpen = new Set(openCategories);
+    if (isOpen) {
+      newOpen.add(categoryId);
+    } else {
+      newOpen.delete(categoryId);
+    }
+    setOpenCategories(newOpen);
+
+    // Update URL
+    const params = new URLSearchParams(searchParams);
+    if (isOpen) {
+      params.set("selectedCategory", categoryId);
+    } else if (categoryId === params.get("selectedCategory")) {
+      params.delete("selectedCategory");
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const startEditing = (category: CategorySummary) => {
     setEditingId(category.id);
@@ -146,7 +190,9 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
     }
   };
 
-  const categoryToDelete = categories.find((category) => category.id === deleteId);
+  const categoryToDelete = categories.find(
+    (category) => category.id === deleteId
+  );
 
   return (
     <>
@@ -154,7 +200,8 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
         <CardHeader>
           <CardTitle>Categories</CardTitle>
           <CardDescription>
-            Organize inventory into quick filters and ensure new items are grouped correctly.
+            Organize inventory into quick filters and ensure new items are
+            grouped correctly.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -215,7 +262,10 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                           <div className="flex flex-col">
                             <span className="font-medium text-foreground">
                               {category.name}
-                              <Badge variant="outline" className="w-fit text-xs ml-2">
+                              <Badge
+                                variant="outline"
+                                className="w-fit text-xs ml-2"
+                              >
                                 {category.productCount}{" "}
                                 {category.productCount === 1 ? "item" : "items"}
                               </Badge>
@@ -247,15 +297,9 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                         {category.productCount > 0 && (
                           <Collapsible
                             open={openCategories.has(category.id)}
-                            onOpenChange={(open) => {
-                              const newOpen = new Set(openCategories);
-                              if (open) {
-                                newOpen.add(category.id);
-                              } else {
-                                newOpen.delete(category.id);
-                              }
-                              setOpenCategories(newOpen);
-                            }}
+                            onOpenChange={(open) =>
+                              handleOpenChange(category.id, open)
+                            }
                           >
                             <CollapsibleTrigger asChild>
                               <Button
@@ -264,7 +308,9 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                 size="sm"
                                 className="w-full justify-between text-left text-sm text-muted-foreground hover:text-foreground"
                               >
-                                <span>View products ({category.productCount})</span>
+                                <span>
+                                  View products ({category.productCount})
+                                </span>
                                 <IconChevronDown
                                   className={`h-4 w-4 transition-transform ${
                                     openCategories.has(category.id)
@@ -277,12 +323,19 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                             <CollapsibleContent className="mt-2">
                               <div className="rounded-md border border-border/60 bg-muted/30 p-3 space-y-3">
                                 {category.products.map((product) => {
-                                  const isLowStock = product.lowStockAt !== null && product.quantity <= product.lowStockAt;
-                                  const conditionColors: Record<string, string> = {
+                                  const isLowStock =
+                                    product.lowStockAt !== null &&
+                                    product.quantity <= product.lowStockAt;
+                                  const conditionColors: Record<
+                                    string,
+                                    string
+                                  > = {
                                     new: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
                                     used: "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
-                                    refurbished: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-                                    "for-parts": "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+                                    refurbished:
+                                      "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+                                    "for-parts":
+                                      "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
                                   };
                                   return (
                                     <div
@@ -297,14 +350,21 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                               {product.name}
                                             </h4>
                                             {isLowStock && (
-                                              <Badge variant="destructive" className="text-xs">
+                                              <Badge
+                                                variant="destructive"
+                                                className="text-xs"
+                                              >
                                                 Low Stock
                                               </Badge>
                                             )}
                                             {product.condition && (
                                               <Badge
                                                 variant="outline"
-                                                className={`text-xs ${conditionColors[product.condition] || "bg-muted"}`}
+                                                className={`text-xs ${
+                                                  conditionColors[
+                                                    product.condition
+                                                  ] || "bg-muted"
+                                                }`}
                                               >
                                                 {product.condition}
                                               </Badge>
@@ -312,7 +372,9 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                           </div>
                                           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
                                             {product.manufacturer && (
-                                              <span className="font-medium">{product.manufacturer}</span>
+                                              <span className="font-medium">
+                                                {product.manufacturer}
+                                              </span>
                                             )}
                                             {product.model && (
                                               <span>• {product.model}</span>
@@ -323,7 +385,7 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                           </div>
                                         </div>
                                         {product.imageUrl && (
-                                          <Image   
+                                          <Image
                                             src={product.imageUrl}
                                             alt={product.name}
                                             className="w-16 h-16 object-cover rounded-md border border-border/40"
@@ -339,17 +401,22 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                         {/* Inventory Info */}
                                         <div className="flex items-center gap-2">
                                           <IconPackage className="h-4 w-4 text-muted-foreground" />
-                                          <span className="text-muted-foreground">Quantity:</span>
+                                          <span className="text-muted-foreground">
+                                            Quantity:
+                                          </span>
                                           <span className="font-medium text-foreground">
                                             {product.quantity}
-                                            {product.lowStockAt && ` / ${product.lowStockAt} threshold`}
+                                            {product.lowStockAt &&
+                                              ` / ${product.lowStockAt} threshold`}
                                           </span>
                                         </div>
 
                                         {/* Price */}
                                         <div className="flex items-center gap-2">
                                           <IconCurrencyPeso className="h-4 w-4 text-muted-foreground" />
-                                          <span className="text-muted-foreground">Price:</span>
+                                          <span className="text-muted-foreground">
+                                            Price:
+                                          </span>
                                           <span className="font-medium text-foreground">
                                             {product.price.toFixed(2)}
                                           </span>
@@ -359,7 +426,9 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                         {product.location && (
                                           <div className="flex items-center gap-2">
                                             <IconMapPin className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-muted-foreground">Location:</span>
+                                            <span className="text-muted-foreground">
+                                              Location:
+                                            </span>
                                             <span className="font-medium text-foreground">
                                               {product.location}
                                             </span>
@@ -370,7 +439,9 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                         {product.supplier && (
                                           <div className="flex items-center gap-2">
                                             <IconBuildingStore className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-muted-foreground">Supplier:</span>
+                                            <span className="text-muted-foreground">
+                                              Supplier:
+                                            </span>
                                             <span className="font-medium text-foreground">
                                               {product.supplier}
                                             </span>
@@ -381,7 +452,9 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
                                         {product.warrantyMonths && (
                                           <div className="flex items-center gap-2">
                                             <IconShield className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-muted-foreground">Warranty:</span>
+                                            <span className="text-muted-foreground">
+                                              Warranty:
+                                            </span>
                                             <span className="font-medium text-foreground">
                                               {product.warrantyMonths} months
                                             </span>
@@ -446,15 +519,19 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
 
       <AddCategoryDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
-      <AlertDialog open={Boolean(deleteId)} onOpenChange={(open) => !open && !isDeleting && setDeleteId(null)}>
+      <AlertDialog
+        open={Boolean(deleteId)}
+        onOpenChange={(open) => !open && !isDeleting && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete category</AlertDialogTitle>
             <AlertDialogDescription>
               {categoryToDelete ? (
                 <>
-                  This will remove <strong>{categoryToDelete.name}</strong> from your
-                  inventory. {categoryToDelete.productCount > 0
+                  This will remove <strong>{categoryToDelete.name}</strong> from
+                  your inventory.{" "}
+                  {categoryToDelete.productCount > 0
                     ? `Products in this category will move to "Uncategorized".`
                     : "No products are currently assigned to this category."}
                 </>
@@ -481,5 +558,3 @@ export function CategoryManager({ categories }: { categories: CategorySummary[] 
     </>
   );
 }
-
-

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useIsMobile } from "@/hooks/use-mobile";
 import * as XLSX from "xlsx";
 import {
@@ -84,7 +85,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { deleteProduct, updateProduct, adjustStock } from "@/lib/action/product";
+import {
+  deleteProduct,
+  updateProduct,
+  adjustStock,
+} from "@/lib/action/product";
 import Image from "next/image";
 import {
   Popover,
@@ -134,25 +139,35 @@ const CONDITION_BADGES: Record<string, string> = {
   new: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400",
   refurbished: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
   used: "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400",
-  "for-parts": "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400",
+  "for-parts":
+    "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400",
 };
 
-const STOCK_STATUS_BADGES: Record<string, { label: string; className: string }> = {
+const STOCK_STATUS_BADGES: Record<
+  string,
+  { label: string; className: string }
+> = {
   "out-of-stock": {
     label: "Out of Stock",
-    className: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400 border-red-200 dark:border-red-800",
+    className:
+      "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400 border-red-200 dark:border-red-800",
   },
   "low-stock": {
     label: "Low Stock",
-    className: "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border-orange-200 dark:border-orange-800",
+    className:
+      "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border-orange-200 dark:border-orange-800",
   },
   "in-stock": {
     label: "In Stock",
-    className: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400 border-green-200 dark:border-green-800",
+    className:
+      "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400 border-green-200 dark:border-green-800",
   },
 };
 
-const getStockStatus = (quantity: number, lowStockAt: number | null | undefined) => {
+const getStockStatus = (
+  quantity: number,
+  lowStockAt: number | null | undefined
+) => {
   if (quantity === 0) return "out-of-stock";
   if (lowStockAt != null && quantity <= lowStockAt) return "low-stock";
   return "in-stock";
@@ -162,45 +177,70 @@ type CategoryOption = {
   id: string;
   name: string;
 };
-
+type InitialFilters = {
+  search?: string;
+  category?: string;
+  manufacturer?: string;
+  condition?: string;
+  lowStock?: boolean;
+  page?: number;
+  pageSize?: number;
+};
 export function InventoryDataTable({
   items,
   categories,
+  initialFilters,
 }: {
   items: Product[];
   categories: CategoryOption[];
+  initialFilters?: InitialFilters;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [detailsProduct, setDetailsProduct] = React.useState<Product | null>(null);
+  const [detailsProduct, setDetailsProduct] = React.useState<Product | null>(
+    null
+  );
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   // Load column visibility from localStorage on mount
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("inventory-column-visibility");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          return {};
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>(() => {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("inventory-column-visibility");
+        if (saved) {
+          try {
+            return JSON.parse(saved);
+          } catch {
+            return {};
+          }
         }
       }
-    }
-    return {};
-  });
+      return {};
+    });
   const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 12,
+    pageIndex: initialFilters?.page ?? 0,
+    pageSize: initialFilters?.pageSize ?? 12,
   });
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
-  const [manufacturerFilter, setManufacturerFilter] = React.useState<string>("all");
-  const [conditionFilter, setConditionFilter] = React.useState<string>("all");
-  const [lowStockFilter, setLowStockFilter] = React.useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = React.useState(
+    initialFilters?.search ?? ""
+  );
+  const [categoryFilter, setCategoryFilter] = React.useState<string>(
+    initialFilters?.category ?? "all"
+  );
+  const [manufacturerFilter, setManufacturerFilter] = React.useState<string>(
+    initialFilters?.manufacturer ?? "all"
+  );
+  const [conditionFilter, setConditionFilter] = React.useState<string>(
+    initialFilters?.condition ?? "all"
+  );
+  const [lowStockFilter, setLowStockFilter] = React.useState<boolean>(
+    initialFilters?.lowStock ?? false
+  );
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [editProduct, setEditProduct] = React.useState<Product | null>(null);
   const [editForm, setEditForm] = React.useState<Record<string, string>>({});
@@ -209,12 +249,78 @@ export function InventoryDataTable({
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [deleteDialogProduct, setDeleteDialogProduct] =
     React.useState<Product | null>(null);
-  const [stockAdjustmentOpen, setStockAdjustmentOpen] =
-    React.useState<string | null>(null);
+  const [stockAdjustmentOpen, setStockAdjustmentOpen] = React.useState<
+    string | null
+  >(null);
   const [stockAdjustmentValue, setStockAdjustmentValue] =
     React.useState<string>("");
-  const [adjustingStockId, setAdjustingStockId] =
-    React.useState<string | null>(null);
+  const [adjustingStockId, setAdjustingStockId] = React.useState<string | null>(
+    null
+  );
+
+  const updateURL = React.useCallback(
+    (filters: {
+      search?: string;
+      category?: string;
+      manufacturer?: string;
+      condition?: string;
+      lowStock?: boolean;
+      page?: number;
+      pageSize?: number;
+    }) => {
+      const params = new URLSearchParams(searchParams);
+
+      // Update or remove each filter
+      if (filters.search) {
+        params.set("search", filters.search);
+      } else {
+        params.delete("search");
+      }
+
+      if (filters.category && filters.category !== "all") {
+        params.set("category", filters.category);
+      } else {
+        params.delete("category");
+      }
+
+      if (filters.manufacturer && filters.manufacturer !== "all") {
+        params.set("manufacturer", filters.manufacturer);
+      } else {
+        params.delete("manufacturer");
+      }
+
+      if (filters.condition && filters.condition !== "all") {
+        params.set("condition", filters.condition);
+      } else {
+        params.delete("condition");
+      }
+
+      if (filters.lowStock) {
+        params.set("lowStock", "true");
+      } else {
+        params.delete("lowStock");
+      }
+
+      if (filters.page && filters.page > 0) {
+        params.set("page", String(filters.page));
+      } else {
+        params.delete("page");
+      }
+
+      if (filters.pageSize && filters.pageSize !== 12) {
+        params.set("pageSize", String(filters.pageSize));
+      } else {
+        params.delete("pageSize");
+      }
+
+      // Use replace to avoid cluttering browser history
+      const newUrl = params.toString()
+        ? `${pathname}?${params.toString()}`
+        : pathname;
+      router.replace(newUrl);
+    },
+    [pathname, router, searchParams]
+  );
 
   const handleEditClick = React.useCallback((product: Product) => {
     setEditProduct(product);
@@ -308,7 +414,9 @@ export function InventoryDataTable({
       if (categoryFilter === "__uncategorized") {
         filtered = filtered.filter((item) => !item.categoryId);
       } else {
-        filtered = filtered.filter((item) => item.categoryId === categoryFilter);
+        filtered = filtered.filter(
+          (item) => item.categoryId === categoryFilter
+        );
       }
     }
 
@@ -508,7 +616,12 @@ export function InventoryDataTable({
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="font-medium text-primary">{product.name}</span>
+                <Link
+                  href={`/inventory/${product.id}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {product.name}
+                </Link>
                 {product.sku && (
                   <span className="text-xs text-muted-foreground">
                     SKU: {product.sku}
@@ -535,7 +648,10 @@ export function InventoryDataTable({
           const manufacturer = row.original.manufacturer;
           if (!manufacturer) return <span className="text-sm">—</span>;
           return (
-            <Badge variant="outline" className="w-fit bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+            <Badge
+              variant="outline"
+              className="w-fit bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+            >
               {manufacturer}
             </Badge>
           );
@@ -580,17 +696,24 @@ export function InventoryDataTable({
                   {statusBadge.label}
                 </Badge>
               )}
-              <span className={`font-semibold text-sm ${isLow || qty === 0 ? "text-red-600 dark:text-red-400" : ""}`}>
+              <span
+                className={`font-semibold text-sm ${
+                  isLow || qty === 0 ? "text-red-600 dark:text-red-400" : ""
+                }`}
+              >
                 {qty} {qty === 1 ? "unit" : "units"}
               </span>
-              <Popover open={isOpen} onOpenChange={(open) => {
-                if (!open) {
-                  setStockAdjustmentOpen(null);
-                  setStockAdjustmentValue("");
-                } else {
-                  setStockAdjustmentOpen(product.id);
-                }
-              }}>
+              <Popover
+                open={isOpen}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    setStockAdjustmentOpen(null);
+                    setStockAdjustmentValue("");
+                  } else {
+                    setStockAdjustmentOpen(product.id);
+                  }
+                }}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
@@ -616,7 +739,9 @@ export function InventoryDataTable({
                         type="number"
                         placeholder="e.g., +10 or -5"
                         value={stockAdjustmentValue}
-                        onChange={(e) => setStockAdjustmentValue(e.target.value)}
+                        onChange={(e) =>
+                          setStockAdjustmentValue(e.target.value)
+                        }
                       />
                       <p className="text-xs text-muted-foreground">
                         Use positive numbers to add, negative to subtract
@@ -637,12 +762,17 @@ export function InventoryDataTable({
                               try {
                                 const result = await adjustStock(formData);
                                 if (result?.success) {
-                                  toast.success(result.message ?? "Stock adjusted successfully.");
+                                  toast.success(
+                                    result.message ??
+                                      "Stock adjusted successfully."
+                                  );
                                   setStockAdjustmentOpen(null);
                                   setStockAdjustmentValue("");
                                   router.refresh();
                                 } else {
-                                  toast.error(result?.message ?? "Failed to adjust stock.");
+                                  toast.error(
+                                    result?.message ?? "Failed to adjust stock."
+                                  );
                                 }
                               } catch {
                                 toast.error("Failed to adjust stock.");
@@ -651,7 +781,9 @@ export function InventoryDataTable({
                               }
                             });
                           } else {
-                            toast.error("Please enter a valid adjustment amount.");
+                            toast.error(
+                              "Please enter a valid adjustment amount."
+                            );
                           }
                         }}
                         disabled={isAdjusting || !stockAdjustmentValue}
@@ -730,7 +862,10 @@ export function InventoryDataTable({
         cell: ({ row }) => {
           const price = Number(row.original.price);
           return (
-            <Badge variant="outline" className="w-fit bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-semibold">
+            <Badge
+              variant="outline"
+              className="w-fit bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-semibold"
+            >
               <IconCurrencyPeso className="size-3 mr-1" />
               {price.toFixed(2)}
             </Badge>
@@ -742,9 +877,13 @@ export function InventoryDataTable({
         header: "Warranty",
         cell: ({ row }) => {
           const warrantyMonths = row.original.warrantyMonths;
-          if (!warrantyMonths) return <span className="text-sm text-muted-foreground">—</span>;
+          if (!warrantyMonths)
+            return <span className="text-sm text-muted-foreground">—</span>;
           return (
-            <Badge variant="outline" className="w-fit bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-400 border-purple-200 dark:border-purple-800">
+            <Badge
+              variant="outline"
+              className="w-fit bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-400 border-purple-200 dark:border-purple-800"
+            >
               {warrantyMonths} {warrantyMonths === 1 ? "month" : "months"}
             </Badge>
           );
@@ -755,9 +894,13 @@ export function InventoryDataTable({
         header: "Location",
         cell: ({ row }) => {
           const location = row.original.location;
-          if (!location) return <span className="text-sm text-muted-foreground">—</span>;
+          if (!location)
+            return <span className="text-sm text-muted-foreground">—</span>;
           return (
-            <Badge variant="outline" className="w-fit bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400 border-slate-200 dark:border-slate-800">
+            <Badge
+              variant="outline"
+              className="w-fit bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+            >
               {location}
             </Badge>
           );
@@ -899,7 +1042,10 @@ export function InventoryDataTable({
     if (typeof window !== "undefined") {
       // Only save if not in mobile mode (don't overwrite user preferences on mobile)
       if (isMobile !== true) {
-        localStorage.setItem("inventory-column-visibility", JSON.stringify(columnVisibility));
+        localStorage.setItem(
+          "inventory-column-visibility",
+          JSON.stringify(columnVisibility)
+        );
       }
     }
   }, [columnVisibility, isMobile]);
@@ -986,8 +1132,18 @@ export function InventoryDataTable({
           placeholder="Search products"
           value={searchTerm}
           onChange={(e) => {
-            setSearchTerm(e.target.value);
+            const value = e.target.value;
+            setSearchTerm(value);
             setPagination({ ...pagination, pageIndex: 0 });
+            updateURL({
+              search: value,
+              category: categoryFilter,
+              manufacturer: manufacturerFilter,
+              condition: conditionFilter,
+              lowStock: lowStockFilter,
+              page: 0,
+              pageSize: pagination.pageSize,
+            });
           }}
           className="w-full sm:max-w-sm"
         />
@@ -1067,8 +1223,18 @@ export function InventoryDataTable({
             variant={lowStockFilter ? "default" : "outline"}
             size="sm"
             onClick={() => {
-              setLowStockFilter(!lowStockFilter);
+              const newValue = !lowStockFilter;
+              setLowStockFilter(newValue);
               setPagination({ ...pagination, pageIndex: 0 });
+              updateURL({
+                search: searchTerm,
+                category: categoryFilter,
+                manufacturer: manufacturerFilter,
+                condition: conditionFilter,
+                lowStock: newValue,
+                page: 0,
+                pageSize: pagination.pageSize,
+              });
             }}
             className="gap-2 shrink-0"
           >
@@ -1081,6 +1247,15 @@ export function InventoryDataTable({
             onValueChange={(value) => {
               setCategoryFilter(value);
               setPagination({ ...pagination, pageIndex: 0 });
+              updateURL({
+                search: searchTerm,
+                category: value,
+                manufacturer: manufacturerFilter,
+                condition: conditionFilter,
+                lowStock: lowStockFilter,
+                page: 0,
+                pageSize: pagination.pageSize,
+              });
             }}
           >
             <SelectTrigger className="h-9 w-full sm:w-[140px] sm:min-w-[140px] justify-between">
@@ -1101,6 +1276,15 @@ export function InventoryDataTable({
             onValueChange={(value) => {
               setManufacturerFilter(value);
               setPagination({ ...pagination, pageIndex: 0 });
+              updateURL({
+                search: searchTerm,
+                category: categoryFilter,
+                manufacturer: value,
+                condition: conditionFilter,
+                lowStock: lowStockFilter,
+                page: 0,
+                pageSize: pagination.pageSize,
+              });
             }}
           >
             <SelectTrigger className="h-9 w-full sm:w-[140px] sm:min-w-[140px] justify-between">
@@ -1123,6 +1307,15 @@ export function InventoryDataTable({
             onValueChange={(value) => {
               setConditionFilter(value);
               setPagination({ ...pagination, pageIndex: 0 });
+              updateURL({
+                search: searchTerm,
+                category: categoryFilter,
+                manufacturer: manufacturerFilter,
+                condition: value,
+                lowStock: lowStockFilter,
+                page: 0,
+                pageSize: pagination.pageSize,
+              });
             }}
           >
             <SelectTrigger className="h-9 w-full sm:w-[140px] sm:min-w-[140px] justify-between">
@@ -1142,7 +1335,11 @@ export function InventoryDataTable({
         <div className="flex items-center gap-2 sm:justify-end sm:flex-shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-initial">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 flex-1 sm:flex-initial"
+              >
                 <IconFilter className="h-4 w-4" />
                 <span className="hidden sm:inline">Columns</span>
                 <span className="sm:hidden">Cols</span>
@@ -1171,7 +1368,11 @@ export function InventoryDataTable({
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-2 flex-1 sm:flex-initial">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 flex-1 sm:flex-initial"
+              >
                 <IconDownload className="h-4 w-4" />
                 <span className="hidden sm:inline">Export</span>
                 <span className="sm:hidden">Export</span>
@@ -1210,58 +1411,63 @@ export function InventoryDataTable({
       )}
 
       <div className="rounded-lg border overflow-hidden w-full">
-        <div className="overflow-x-auto overflow-y-auto w-full" style={{ maxHeight: "calc(100vh - 400px)", minHeight: "600px" }}>
+        <div
+          className="overflow-x-auto overflow-y-auto w-full"
+          style={{ maxHeight: "calc(100vh - 400px)", minHeight: "600px" }}
+        >
           <Table className="w-full" style={{ minWidth: "800px" }}>
             <TableHeader className="bg-muted sticky top-0 z-10">
-            {table
-              .getHeaderGroups()
-              .map((headerGroup: HeaderGroup<Product>) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map(
-                    (header: Header<Product, unknown>) => (
-                      <TableHead key={header.id} className="font-semibold">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    )
-                  )}
+              {table
+                .getHeaderGroups()
+                .map((headerGroup: HeaderGroup<Product>) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map(
+                      (header: Header<Product, unknown>) => (
+                        <TableHead key={header.id} className="font-semibold">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      )
+                    )}
+                  </TableRow>
+                ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row: Row<Product>) => (
+                  <TableRow
+                    key={row.id}
+                    className="hover:bg-muted/70"
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .map((cell: Cell<Product, unknown>) => (
+                        <TableCell key={cell.id} className="py-4">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No products found.
+                  </TableCell>
                 </TableRow>
-              ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row: Row<Product>) => (
-                <TableRow
-                  key={row.id}
-                  className="hover:bg-muted/70"
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell: Cell<Product, unknown>) => (
-                    <TableCell key={cell.id} className="py-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No products found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -1663,10 +1869,14 @@ export function InventoryDataTable({
                     </DrawerTitle>
                     <DrawerDescription className="mt-1">
                       {detailsProduct.sku && (
-                        <span className="block text-xs">SKU: {detailsProduct.sku}</span>
+                        <span className="block text-xs">
+                          SKU: {detailsProduct.sku}
+                        </span>
                       )}
                       {detailsProduct.model && (
-                        <span className="block text-xs">Model: {detailsProduct.model}</span>
+                        <span className="block text-xs">
+                          Model: {detailsProduct.model}
+                        </span>
                       )}
                     </DrawerDescription>
                   </div>
@@ -1691,18 +1901,24 @@ export function InventoryDataTable({
                         </div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Manufacturer:</span>
+                        <span className="text-muted-foreground">
+                          Manufacturer:
+                        </span>
                         <p className="mt-1 font-medium">
                           {detailsProduct.manufacturer || "—"}
                         </p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Condition:</span>
+                        <span className="text-muted-foreground">
+                          Condition:
+                        </span>
                         <div className="mt-1">
                           <Badge
                             variant="secondary"
                             className={`w-fit ${
-                              CONDITION_BADGES[detailsProduct.condition || "new"] || "bg-muted"
+                              CONDITION_BADGES[
+                                detailsProduct.condition || "new"
+                              ] || "bg-muted"
                             }`}
                           >
                             {(detailsProduct.condition || "new")
@@ -1734,7 +1950,9 @@ export function InventoryDataTable({
                         </p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Low Stock At:</span>
+                        <span className="text-muted-foreground">
+                          Low Stock At:
+                        </span>
                         <p className="mt-1 font-medium">
                           {detailsProduct.lowStockAt
                             ? `${detailsProduct.lowStockAt} units`
@@ -1769,8 +1987,12 @@ export function InventoryDataTable({
                       <div className="space-y-3">
                         {detailsProduct.supplier && (
                           <div>
-                            <span className="text-sm text-muted-foreground">Supplier:</span>
-                            <p className="mt-1 font-medium">{detailsProduct.supplier}</p>
+                            <span className="text-sm text-muted-foreground">
+                              Supplier:
+                            </span>
+                            <p className="mt-1 font-medium">
+                              {detailsProduct.supplier}
+                            </p>
                           </div>
                         )}
                         {detailsProduct.specs && (
@@ -1778,7 +2000,9 @@ export function InventoryDataTable({
                             <span className="text-sm text-muted-foreground">
                               Specifications:
                             </span>
-                            <p className="mt-1 text-sm">{detailsProduct.specs}</p>
+                            <p className="mt-1 text-sm">
+                              {detailsProduct.specs}
+                            </p>
                           </div>
                         )}
                         {detailsProduct.compatibility && (
@@ -1786,13 +2010,19 @@ export function InventoryDataTable({
                             <span className="text-sm text-muted-foreground">
                               Compatibility:
                             </span>
-                            <p className="mt-1 text-sm">{detailsProduct.compatibility}</p>
+                            <p className="mt-1 text-sm">
+                              {detailsProduct.compatibility}
+                            </p>
                           </div>
                         )}
                         {detailsProduct.notes && (
                           <div>
-                            <span className="text-sm text-muted-foreground">Notes:</span>
-                            <p className="mt-1 text-sm">{detailsProduct.notes}</p>
+                            <span className="text-sm text-muted-foreground">
+                              Notes:
+                            </span>
+                            <p className="mt-1 text-sm">
+                              {detailsProduct.notes}
+                            </p>
                           </div>
                         )}
                       </div>

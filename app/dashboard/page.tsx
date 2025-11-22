@@ -18,7 +18,12 @@ export const metadata: Metadata = {
   title: "Dashboard | Hardware Inventory Management",
 };
 
-export default async function DashboardPage() {
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function DashboardPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session || !session.user) {
     redirect("/sign-in");
@@ -63,7 +68,7 @@ export default async function DashboardPage() {
   const days = 365;
   const chartData: { date: string; value: number }[] = [];
   const currentDate = new Date();
-  
+
   // If we have products, calculate value based on creation dates
   if (allProducts.length > 0) {
     for (let i = 0; i < days; i++) {
@@ -71,19 +76,19 @@ export default async function DashboardPage() {
       date.setDate(date.getDate() - (days - i - 1));
       date.setHours(0, 0, 0, 0);
       const dateStr = date.toISOString().split("T")[0];
-      
+
       // Calculate inventory value up to this date
       const productsUntilDate = allProducts.filter((p) => {
         const productDate = new Date(p.createdAt);
         productDate.setHours(0, 0, 0, 0);
         return productDate <= date;
       });
-      
+
       const value = productsUntilDate.reduce(
         (sum, p) => sum + Number(p.price) * p.quantity,
         0
       );
-      
+
       chartData.push({
         date: dateStr,
         value: value,
@@ -159,7 +164,10 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <ChartAreaInteractive chartData={chartData} />
+                <ChartAreaInteractive
+                  chartData={chartData}
+                  dateRange={(searchParams.dateRange as string) || "90d"}
+                />
               </div>
               <div className="rounded-lg border bg-card p-6 shadow-sm">
                 <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
@@ -185,9 +193,7 @@ export default async function DashboardPage() {
                     <span className="text-sm text-muted-foreground">
                       Categories
                     </span>
-                    <span className="font-semibold">
-                      {uniqueCategories}
-                    </span>
+                    <span className="font-semibold">{uniqueCategories}</span>
                   </div>
                 </div>
               </div>
@@ -195,18 +201,22 @@ export default async function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               <CategoryBreakdownChart
-                data={Object.entries(categoryBreakdown).map(([category, data]) => ({
-                  category,
-                  count: data.count,
-                  value: data.value,
-                }))}
+                data={Object.entries(categoryBreakdown).map(
+                  ([category, data]) => ({
+                    category,
+                    count: data.count,
+                    value: data.value,
+                  })
+                )}
               />
               <ManufacturerBreakdownChart
-                data={Object.entries(manufacturerBreakdown).map(([manufacturer, data]) => ({
-                  manufacturer,
-                  count: data.count,
-                  value: data.value,
-                }))}
+                data={Object.entries(manufacturerBreakdown).map(
+                  ([manufacturer, data]) => ({
+                    manufacturer,
+                    count: data.count,
+                    value: data.value,
+                  })
+                )}
               />
             </div>
           </div>

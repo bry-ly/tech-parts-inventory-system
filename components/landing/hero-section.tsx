@@ -91,7 +91,7 @@ export default function HeroSection() {
                     className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
                   >
                     <span className="text-foreground text-sm">
-                      See Inventory Management in Action
+                      See Velos Management in Action
                     </span>
                     <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700"></span>
 
@@ -114,7 +114,7 @@ export default function HeroSection() {
                   as="h1"
                   className="mx-auto mt-8 max-w-4xl text-balance text-5xl max-md:font-semibold md:text-7xl lg:mt-16 xl:text-[5.25rem]"
                 >
-                Inventory Management
+                  Velos Modern Inventory Management
                 </TextEffect>
                 <TextEffect
                   per="line"
@@ -157,9 +157,7 @@ export default function HeroSection() {
                       </Link>
                     </Button>
                   </div>
-                  <div
-                    key={2}
-                  >
+                  <div key={2}>
                     <Button
                       asChild
                       size="lg"

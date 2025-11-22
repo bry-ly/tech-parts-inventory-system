@@ -3,28 +3,20 @@ import Link from "next/link";
 
 const links = [
   {
+    title: "About",
+    href: "#",
+  },
+  {
     title: "Features",
     href: "#features",
   },
   {
-    title: "Pricing",
-    href: "#pricing",
+    title:"Team",
+    href:"#team",
   },
   {
-    title: "Dashboard",
-    href: "/dashboard",
-  },
-  {
-    title: "Sign In",
-    href: "/sign-in",
-  },
-  {
-    title: "Sign Up",
-    href: "/sign-up",
-  },
-  {
-    title: "About",
-    href: "#",
+    title: "Demo",
+    href: "/demo",
   },
 ];
 
@@ -49,7 +41,7 @@ export default function FooterSection() {
         </div>
         <span className="text-muted-foreground block text-center text-sm">
           {" "}
-          © {new Date().getFullYear()} Tech Parts. All rights reserved
+          © {new Date().getFullYear()} Velos Inventory  . All rights reserved
         </span>
       </div>
     </footer>

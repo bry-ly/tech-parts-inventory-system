@@ -1,4 +1,4 @@
-# 📦 Tech Parts Inventory System
+# 📦 Velos Inventory
 
 <div align="center">
 
@@ -9,7 +9,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql&logoColor=white)
 
-**A modern, full-featured inventory management system for tech components and parts**
+**A modern, full-featured velos inventory management system for all kinds of items**
 
 [Features](#-features) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Project Structure](#-project-structure) • [Documentation](#-documentation)
 
@@ -37,7 +37,7 @@
 
 ## 🎯 Overview
 
-**Tech Parts Inventory System** is a comprehensive, production-ready inventory management solution designed specifically for managing technology components and parts. Built with modern web technologies, it provides a robust, scalable, and user-friendly platform for tracking inventory, managing products, monitoring stock levels, and maintaining detailed audit logs.
+**Velos Inventory** is a comprehensive, production-ready inventory management solution designed for managing any type of inventory. Built with modern web technologies, it provides a robust, scalable, and user-friendly platform for tracking inventory, managing products, monitoring stock levels, and maintaining detailed audit logs.
 
 ### Key Highlights
 
@@ -56,13 +56,16 @@
 ## 🚀 Features
 
 ### 🔐 Authentication & Security
+
 - **Better Auth Integration** - Secure session management and authentication
 - **Protected Routes** - Middleware-based route protection
 - **User Management** - Multi-user support with user profiles
 - **Session Tracking** - IP address and user agent logging
 
 ### 📦 Inventory Management
+
 - **Product Management**
+
   - Create, update, and delete products
   - SKU tracking and management
   - Manufacturer and model information
@@ -73,6 +76,7 @@
   - Warranty information
 
 - **Stock Management**
+
   - Real-time quantity tracking
   - Low stock alerts and thresholds
   - Stock movement history
@@ -86,7 +90,9 @@
   - Category-based filtering and analytics
 
 ### 📊 Analytics & Reporting
+
 - **Dashboard Analytics**
+
   - Category breakdown charts
   - Manufacturer distribution
   - Stock level visualizations
@@ -99,7 +105,9 @@
   - Data table pagination and sorting
 
 ### 🎨 User Interface
+
 - **Modern Design System**
+
   - Shadcn UI components
   - Tailwind CSS styling
   - Dark mode support
@@ -114,7 +122,9 @@
   - Modal dialogs and forms
 
 ### 🔧 Developer Experience
+
 - **Type Safety**
+
   - Full TypeScript implementation
   - Zod schema validation
   - Prisma type generation
@@ -131,35 +141,40 @@
 ## 🧱 Tech Stack
 
 ### Core Framework
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| ![Next.js](https://img.shields.io/badge/Next.js-15.5.6-black?logo=next.js) | 15.5.6 | React framework with App Router |
-| ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?logo=react) | 19.1.0 | UI library |
-| ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript) | 5.0 | Type-safe development |
+
+| Technology                                                                        | Version | Purpose                         |
+| --------------------------------------------------------------------------------- | ------- | ------------------------------- |
+| ![Next.js](https://img.shields.io/badge/Next.js-15.5.6-black?logo=next.js)        | 15.5.6  | React framework with App Router |
+| ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?logo=react)             | 19.1.0  | UI library                      |
+| ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript) | 5.0     | Type-safe development           |
 
 ### Backend & Database
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| ![Prisma](https://img.shields.io/badge/Prisma-6.18.0-2D3748?logo=prisma) | 6.18.0 | ORM and database toolkit |
-| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql) | 16 | Primary database |
-| ![Better Auth](https://img.shields.io/badge/Better_Auth-1.3.34-000000) | 1.3.34 | Authentication system |
+
+| Technology                                                                       | Version | Purpose                  |
+| -------------------------------------------------------------------------------- | ------- | ------------------------ |
+| ![Prisma](https://img.shields.io/badge/Prisma-6.18.0-2D3748?logo=prisma)         | 6.18.0  | ORM and database toolkit |
+| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql) | 16      | Primary database         |
+| ![Better Auth](https://img.shields.io/badge/Better_Auth-1.3.34-000000)           | 1.3.34  | Authentication system    |
 
 ### UI & Styling
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?logo=tailwind-css) | 4.0 | Utility-first CSS framework |
-| ![Shadcn UI](https://img.shields.io/badge/Shadcn_UI-3.5.0-000000) | 3.5.0 | Component library |
-| ![Radix UI](https://img.shields.io/badge/Radix_UI-Latest-161618) | Latest | Accessible component primitives |
-| ![Lucide Icons](https://img.shields.io/badge/Lucide_Icons-0.548.0-FF6B6B) | 0.548.0 | Icon library |
+
+| Technology                                                                              | Version | Purpose                         |
+| --------------------------------------------------------------------------------------- | ------- | ------------------------------- |
+| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?logo=tailwind-css) | 4.0     | Utility-first CSS framework     |
+| ![Shadcn UI](https://img.shields.io/badge/Shadcn_UI-3.5.0-000000)                       | 3.5.0   | Component library               |
+| ![Radix UI](https://img.shields.io/badge/Radix_UI-Latest-161618)                        | Latest  | Accessible component primitives |
+| ![Lucide Icons](https://img.shields.io/badge/Lucide_Icons-0.548.0-FF6B6B)               | 0.548.0 | Icon library                    |
 
 ### Data & Forms
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| ![Zod](https://img.shields.io/badge/Zod-4.1.12-3E63DD) | 4.1.12 | Schema validation |
-| ![React Hook Form](https://img.shields.io/badge/React_Hook_Form-7.66.0-EC5990) | 7.66.0 | Form management |
-| ![TanStack Table](https://img.shields.io/badge/TanStack_Table-8.21.3-FF4154) | 8.21.3 | Data table component |
+
+| Technology                                                                     | Version | Purpose              |
+| ------------------------------------------------------------------------------ | ------- | -------------------- |
+| ![Zod](https://img.shields.io/badge/Zod-4.1.12-3E63DD)                         | 4.1.12  | Schema validation    |
+| ![React Hook Form](https://img.shields.io/badge/React_Hook_Form-7.66.0-EC5990) | 7.66.0  | Form management      |
+| ![TanStack Table](https://img.shields.io/badge/TanStack_Table-8.21.3-FF4154)   | 8.21.3  | Data table component |
 
 ### Additional Libraries
+
 - **@dnd-kit** - Drag and drop functionality
 - **date-fns** - Date manipulation
 - **recharts** - Charting library
@@ -357,10 +372,12 @@ The project uses Next.js 15 with Turbopack for faster development builds. Config
 ### Core Models
 
 #### User
+
 - User authentication and profile information
 - Relationships with sessions, accounts, categories, tags, and activity logs
 
 #### Product
+
 - Complete product information including:
   - Basic info (name, SKU, manufacturer, model)
   - Inventory (quantity, low stock threshold, condition, location)
@@ -371,21 +388,25 @@ The project uses Next.js 15 with Turbopack for faster development builds. Config
 - Relationships with categories and tags
 
 #### Category
+
 - User-defined product categories
 - Unique per user
 - Relationship with products
 
 #### Tag
+
 - Flexible tagging system
 - Many-to-many relationship with products
 - Unique per user
 
 #### ActivityLog
+
 - Complete audit trail
 - Tracks all changes to entities
 - Includes actor information and change details
 
 #### Session & Account
+
 - Better Auth session management
 - OAuth provider account linking
 - Token management
@@ -404,6 +425,7 @@ The project uses Next.js 15 with Turbopack for faster development builds. Config
 ### Authentication Components
 
 - **Sign In Form** (`components/auth/sign-in-form.tsx`)
+
   - Email/password authentication
   - Form validation with Zod
   - Error handling
@@ -416,6 +438,7 @@ The project uses Next.js 15 with Turbopack for faster development builds. Config
 ### Inventory Components
 
 - **Inventory Data Table** (`components/inventory/inventory-data-table.tsx`)
+
   - Advanced data table with TanStack Table
   - Sorting, filtering, pagination
   - Column visibility controls
@@ -423,6 +446,7 @@ The project uses Next.js 15 with Turbopack for faster development builds. Config
   - Export functionality
 
 - **Category Manager** (`components/inventory/category-manager.tsx`)
+
   - Create and manage categories
   - Category breakdown charts
   - Product count per category
@@ -479,16 +503,19 @@ npx prisma generate  # Generate Prisma Client
 ### Development Workflow
 
 1. **Create Feature Branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Make Changes**
+
    - Follow TypeScript and React best practices
    - Use existing component patterns
    - Add proper error handling
 
 3. **Test Changes**
+
    ```bash
    npm run lint
    npm run build
@@ -521,6 +548,7 @@ npm run build
 ### Environment Variables
 
 Ensure all production environment variables are set:
+
 - `DATABASE_URL` - Production database connection
 - `BETTER_AUTH_SECRET` - Strong secret key
 - `BETTER_AUTH_URL` - Production URL
@@ -529,6 +557,7 @@ Ensure all production environment variables are set:
 ### Deployment Platforms
 
 The application can be deployed to:
+
 - **Vercel** (Recommended for Next.js)
 - **Netlify**
 - **Railway**
@@ -575,7 +604,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 **Bry-Ly**
 
 - GitHub: [@bry-ly](https://github.com/bry-ly)
-- Project: [Tech Parts Inventory System](https://github.com/bry-ly/tech-parts-inventory-system)
+- Project: [Inventory System](https://github.com/bry-ly/tech-parts-inventory-system)
 
 ---
 

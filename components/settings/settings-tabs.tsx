@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "./profile-settings";
 import { NotificationSettings } from "./notification-settings";
@@ -20,11 +21,30 @@ interface SettingsTabsProps {
     ipAddress: string | null | undefined;
     userAgent: string | null | undefined;
   };
+  defaultTab?: string;
 }
 
-export function SettingsTabs({ user, session }: SettingsTabsProps) {
+export function SettingsTabs({
+  user,
+  session,
+  defaultTab = "profile",
+}: SettingsTabsProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", value);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
   return (
-    <Tabs defaultValue="profile" className="w-full">
+    <Tabs
+      defaultValue={defaultTab}
+      onValueChange={handleTabChange}
+      className="w-full"
+    >
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="profile">Profile</TabsTrigger>
         <TabsTrigger value="notifications">Notifications</TabsTrigger>

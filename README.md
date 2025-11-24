@@ -38,8 +38,12 @@
 ## 🎯 Overview
 
 **Velos Inventory** is a comprehensive, production-ready inventory management solution designed for managing any type of inventory. Built with modern web technologies, it provides a robust, scalable, and user-friendly platform for tracking inventory, managing products, monitoring stock levels, and maintaining detailed audit logs.
+---
+<img width="1828" height="903" alt="techparts-dark" src="https://github.com/user-attachments/assets/7bc25164-b4ae-4efa-849a-42f2350a20ad" />
 
+---
 ### Key Highlights
+
 
 - 🔐 **Secure Authentication** - Built-in authentication system using Better Auth
 - 📊 **Real-time Dashboard** - Interactive charts and analytics for inventory insights

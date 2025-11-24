@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/provider/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
+import NextTopLoader from "nextjs-toploader";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Velos",
-  description: "Velos - A modern inventory management system"
+  description: "Velos - A modern inventory management system",
 };
 
 export default function RootLayout({
@@ -29,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <NextTopLoader showSpinner={false}  />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

@@ -415,8 +415,8 @@ async function main() {
   console.log("🌱 Starting seed process...");
 
   // Find or create user
-  const userEmail = "techparts@gmail.com";
-  let user = await prisma.user.findUnique({
+  const userEmail = "velosinventory@gmail.com";
+  const user = await prisma.user.findUnique({
     where: { email: userEmail },
   });
 
@@ -474,7 +474,7 @@ async function main() {
     // Check if product already exists for this user
     // First check by SKU if it exists globally
     let productSku = part.sku || null;
-    let existingProduct = productSku
+    const existingProduct = productSku
       ? await prisma.product.findUnique({
           where: { sku: productSku },
         })

@@ -21,6 +21,16 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/add-product/:path*",
+    "/activity-log/:path*",
+    "/inventory/:path*",
+    "/sales/:path*",
+    "/reports/:path*",
+    "/stocks/:path*",
     "/settings/:path*",
+    "/categories/:path*",
+    "/tags/:path*",
+    "/users/:path*",
+    "/products/:path*",
+    "/suppliers/:path*",
   ],
 };

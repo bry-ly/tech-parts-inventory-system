@@ -418,7 +418,10 @@ export function CategoryManager({
                                             Price:
                                           </span>
                                           <span className="font-medium text-foreground">
-                                            {product.price.toFixed(2)}
+                                            {new Intl.NumberFormat("en-PH", {
+                                              style: "currency",
+                                              currency: "PHP",
+                                            }).format(product.price)}
                                           </span>
                                         </div>
 

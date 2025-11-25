@@ -20,13 +20,26 @@ export default async function AddProductPage() {
   }
 
   const user = session.user;
-  const categories = await prisma.category.findMany({
-    where: { userId: user.id },
-    orderBy: { name: "asc" },
-  });
+  const [categories, tags] = await Promise.all([
+    prisma.category.findMany({
+      where: { userId: user.id },
+      orderBy: { name: "asc" },
+    }),
+    prisma.tag.findMany({
+      where: { userId: user.id },
+      orderBy: { name: "asc" },
+    }),
+  ]);
   const categoryOptions = categories.map((category) => ({
     id: category.id,
     name: category.name,
+  }));
+  const tagOptions = tags.map((tag) => ({
+    id: tag.id,
+    name: tag.name,
+    createdAt: tag.createdAt,
+    updatedAt: tag.updatedAt,
+    userId: tag.userId,
   }));
   const userSidebar = {
     name: user.name ?? user.email ?? "User",
@@ -48,7 +61,7 @@ export default async function AddProductPage() {
         <SiteHeader action={<AddCategoryButton />} />
         <main className="p-8">
           <div className="max-w-4xl justify-center mx-auto">
-            <AddProductForm categories={categoryOptions} />
+            <AddProductForm categories={categoryOptions} tags={tagOptions}/>
           </div>
         </main>
       </SidebarInset>

@@ -25,18 +25,6 @@ export const HeroHeader = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSmoothScroll = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
-  ) => {
-    e.preventDefault();
-    setMenuState(false);
-    const target = document.querySelector(href);
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   return (
     <header>
       <nav
@@ -74,13 +62,15 @@ export const HeroHeader = () => {
               <ul className="flex gap-8 text-sm">
                 {menuItems.map((item, index) => (
                   <li key={index}>
-                    <a
-                      href={item.href}
-                      onClick={(e) => handleSmoothScroll(e, item.href)}
+                    <Link
+                      href={
+                        item.href.startsWith("#") ? `/${item.href}` : item.href
+                      }
+                      onClick={() => setMenuState(false)}
                       className="text-muted-foreground hover:text-accent-foreground block cursor-pointer duration-150"
                     >
                       <span>{item.name}</span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -91,20 +81,24 @@ export const HeroHeader = () => {
                 <ul className="space-y-6 text-base">
                   {menuItems.map((item, index) => (
                     <li key={index}>
-                      <a
-                        href={item.href}
-                        onClick={(e) => handleSmoothScroll(e, item.href)}
+                      <Link
+                        href={
+                          item.href.startsWith("#")
+                            ? `/${item.href}`
+                            : item.href
+                        }
+                        onClick={() => setMenuState(false)}
                         className="text-muted-foreground hover:text-accent-foreground block cursor-pointer duration-150"
                       >
                         <span>{item.name}</span>
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
                 <div className="md:items-center flex justify-center">
-                <ThemeSwitcher />
+                  <ThemeSwitcher />
                 </div>
                 <Button
                   asChild

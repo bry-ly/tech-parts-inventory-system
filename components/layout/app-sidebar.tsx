@@ -1,16 +1,13 @@
 "use client";
-
 import type * as React from "react";
 import {
   IconDashboard,
-  IconFileAi,
-  IconFileDescription,
   IconHelp,
   IconShoppingCart,
   IconSettings,
-  IconPlus,
-  IconCamera,
-  IconTags,
+  IconPackages,
+  IconTrendingUp,
+  IconChartBar,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/layout/nav-main";
@@ -36,69 +33,79 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Inventory",
-      url: "/inventory",
+      title: "Products / Inventory",
+      url: "#",
       icon: IconShoppingCart,
+      items: [
+        {
+          title: "Product List",
+          url: "/inventory",
+        },
+        {
+          title: "Add Product",
+          url: "/add-product",
+        },
+        {
+          title: "Categories",
+          url: "/categories",
+        },
+        {
+          title: "Tags",
+          url: "/tags",
+        },
+      ],
     },
     {
-      title: "Categories",
-      url: "/categories",
-      icon: IconTags,
+      title: "Stock Management",
+      url: "#",
+      icon: IconPackages,
+      items: [
+        {
+          title: "Stock Adjustment",
+          url: "/stock/adjustment",
+        },
+        {
+          title: "Low Stock Alerts",
+          url: "/stock/alerts",
+        },
+      ],
     },
     {
-      title: "Add Product",
-      url: "/add-product",
-      icon: IconPlus,
+      title: "Sales / Outbound",
+      url: "#",
+      icon: IconTrendingUp,
+      items: [
+        {
+          title: "Create Sale",
+          url: "/sales/create",
+        },
+        {
+          title: "Sales History",
+          url: "/sales/history",
+        },
+      ],
+    },
+    {
+      title: "Reports",
+      url: "#",
+      icon: IconChartBar,
+      items: [
+        {
+          title: "Inventory Report",
+          url: "/reports/inventory",
+        },
+        {
+          title: "Sales Report",
+          url: "/reports/sales",
+        },
+        {
+          title: "Activity Log",
+          url: "/activity-log",
+        },
+      ],
     },
   ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
+  NavDocuments: [],
   navSecondary: [
     {
       title: "Settings",
@@ -138,7 +145,9 @@ export function AppSidebar({
                   height={20}
                   className="size-5!"
                 />
-                <span className="text-base font-semibold">Inventory Dashboard</span>
+                <span className="text-base font-semibold">
+                  Inventory Dashboard
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

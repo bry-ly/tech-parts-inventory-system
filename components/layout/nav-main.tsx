@@ -2,6 +2,7 @@
 
 import {
   type Icon,
+  IconChevronRight,
   IconCirclePlusFilled,
   IconPackage,
   IconBuildingFactory,
@@ -9,6 +10,22 @@ import {
   IconHash,
   IconTag,
 } from "@tabler/icons-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
 import {
   Dialog,
   DialogContent,
@@ -27,29 +44,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createProduct } from "@/lib/action/product";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import Link from "next/link";
 
 export function NavMain({
   items,
+  label,
 }: {
   items: {
     title: string;
     url: string;
     icon?: Icon;
+    isActive?: boolean;
+    items?: {
+      title: string;
+      url: string;
+    }[];
   }[];
+  label?: string;
 }) {
+  const [openItem, setOpenItem] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [quickCreateValue, setQuickCreateValue] = useState("");
   const [manufacturer, setManufacturer] = useState("");
@@ -57,6 +76,17 @@ export function NavMain({
   const [quantity, setQuantity] = useState("0");
   const [condition, setCondition] = useState("new");
   const [isSubmitting, startTransition] = useTransition();
+
+  // Automatically open the group that contains the active page
+  // This effect runs when the pathname changes (navigation)
+  useState(() => {
+    const activeItem = items.find((item) =>
+      item.items?.some((subItem) => subItem.url === pathname)
+    );
+    if (activeItem) {
+      setOpenItem(activeItem.title);
+    }
+  });
 
   const handleOpenChange = (open: boolean) => {
     setQuickCreateOpen(open);
@@ -74,30 +104,72 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2 overflow-hidden">
-        {/* Quick Create Button */}
-        <SidebarMenuItem className="flex min-w-0 items-center gap-2">
-          <SidebarMenuButton
-            tooltip="Quick Create Product"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 w-full duration-200 ease-linear shadow-sm"
-            onClick={() => setQuickCreateOpen(true)}
-          >
-            <IconCirclePlusFilled className="size-5" />
-            <span className="truncate font-medium">Quick Create</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <Link href={item.url}>
-                  {item.icon && <item.icon />}
-                  <span className="truncate">{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {/* Quick Create Button */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Quick Create Product"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground w-full duration-200 ease-linear shadow-sm"
+              onClick={() => setQuickCreateOpen(true)}
+            >
+              <IconCirclePlusFilled className="size-5" />
+              <span className="truncate font-medium">Quick Create</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          {items.map((item) => {
+            if (!item.items || item.items.length === 0) {
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <Link href={item.url}>
+                      {item.icon && <item.icon />}
+                      <span className="truncate">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            }
+            return (
+              <Collapsible
+                key={item.title}
+                asChild
+                open={openItem === item.title}
+                onOpenChange={(isOpen) => {
+                  setOpenItem(isOpen ? item.title : null);
+                }}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton tooltip={item.title}>
+                      {item.icon && <item.icon />}
+                      <span className="truncate">{item.title}</span>
+                      <IconChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton asChild>
+                            <Link href={subItem.url}>
+                              <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            );
+          })}
         </SidebarMenu>
+
         {/* Quick Create Dialog */}
         <Dialog open={quickCreateOpen} onOpenChange={handleOpenChange}>
           <DialogContent className="sm:max-w-[500px]">

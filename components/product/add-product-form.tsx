@@ -1,10 +1,9 @@
 "use client";
 
-import type { ChangeEvent, FormEvent } from "react";
-import { useState } from "react";
 import { Zap, Upload, X } from "lucide-react";
-import { toast } from "sonner";
-import { createProduct } from "@/lib/action/product";
+import { useRouter } from "next/navigation";
+import { useImageUpload } from "@/hooks/use-image-upload";
+import { useProductForm } from "@/hooks/use-product-form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,200 +17,71 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import Image from "next/image";
+import { CONDITIONS } from "@/lib/constants/inventory";
+import type { CategoryOption } from "@/lib/types";
 
-type FormState = {
-  name: string;
-  categoryId: string;
-  manufacturer: string;
-  model: string;
-  sku: string;
-  quantity: string;
-  lowStockAt: string;
-  condition: string;
-  location: string;
-  price: string;
-  specs: string;
-  compatibility: string;
-  supplier: string;
-  warrantyMonths: string;
-  notes: string;
-  imageUrl: string;
-};
-
-const CONDITIONS = ["new", "used", "refurbished", "for-parts"] as const;
-
-const INITIAL_FORM_STATE: FormState = {
-  name: "",
-  categoryId: "",
-  manufacturer: "",
-  model: "",
-  sku: "",
-  quantity: "0",
-  lowStockAt: "",
-  condition: "new",
-  location: "",
-  price: "0",
-  specs: "",
-  compatibility: "",
-  supplier: "",
-  warrantyMonths: "",
-  notes: "",
-  imageUrl: "",
-};
-
-const createInitialFormState = (): FormState => ({ ...INITIAL_FORM_STATE });
-
-type CategoryOption = {
+interface Tag {
   id: string;
   name: string;
-};
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+}
 
-export function AddProductForm({ categories }: { categories: CategoryOption[] }) {
-  const [formData, setFormData] = useState<FormState>(() =>
-    createInitialFormState()
-  );
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+interface AddProductFormProps {
+  categories: CategoryOption[];
+  tags: Tag[];
+}
+
+export function AddProductForm({ categories, tags }: AddProductFormProps) {
+  const router = useRouter();
+
+  // Use custom hooks
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    handleChange,
+    handleTagToggle,
+    handleSubmit,
+    resetForm,
+  } = useProductForm({
+    onSuccess: () => {
+      router.refresh();
+      resetImage();
+    },
+  });
+
+  const { imagePreview, handleImageChange, handleRemoveImage, resetImage } =
+    useImageUpload();
+
+  // Sync image URL with form data
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageChange(e);
+      // The image preview will be set by the hook, we need to update formData
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        // Update form data with the base64 string
+        const fakeEvent = {
+          target: { name: "imageUrl", value: base64String },
+        } as React.ChangeEvent<HTMLInputElement>;
+        handleChange(fakeEvent);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const selectedCategory = categories.find(
     (category) => category.id === formData.categoryId
   );
+
   const isLowStock =
     Number(formData.quantity) > 0 &&
     Number(formData.lowStockAt) > 0 &&
     Number(formData.quantity) <= Number(formData.lowStockAt);
-
-  const handleFormChange = (
-    event: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } = event.target;
-
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-
-    setErrors((previous) => {
-      if (!previous[name]) {
-        return previous;
-      }
-
-      const next = { ...previous };
-      next[name] = [];
-      return next;
-    });
-  };
-
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Invalid file type", {
-        description: "Please select an image file (JPEG, PNG, GIF, etc.)",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      toast.error("File too large", {
-        description: "Please select an image smaller than 5MB",
-      });
-      return;
-    }
-
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setImagePreview(base64String);
-      setFormData((previous) => ({
-        ...previous,
-        imageUrl: base64String,
-      }));
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read file", {
-        description: "Please try selecting the image again",
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = () => {
-    setImagePreview(null);
-    setFormData((previous) => ({
-      ...previous,
-      imageUrl: "",
-    }));
-  };
-
-  const resetForm = () => {
-    setFormData(createInitialFormState());
-    setImagePreview(null);
-    setErrors({});
-  };
-
-  const handleReset = () => {
-    resetForm();
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (isSubmitting) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrors({});
-
-    const form = event.currentTarget;
-    const formDataPayload = new FormData(form);
-
-    try {
-      const result = await createProduct(formDataPayload);
-
-      if (result?.success) {
-        toast.success(result.message ?? "Product added successfully!", {
-          description: "The product was added to your inventory.",
-        });
-        resetForm();
-        form.reset();
-      } else if (result?.errors) {
-        setErrors(result.errors);
-        toast.error(
-          result.message ??
-            "Validation failed. Please check the form for errors.",
-          {
-            description: "Please review the highlighted fields and try again.",
-          }
-        );
-      } else {
-        toast.error(result?.message ?? "Failed to add product.", {
-          description: "An unexpected error occurred.",
-        });
-      }
-    } catch (error) {
-      const description =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-
-      toast.error("Failed to add product.", { description });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const renderFieldErrors = (field: string) =>
     errors[field]?.map((message, index) => (
@@ -223,10 +93,10 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
   return (
     <>
       <Toaster richColors position="top-right" />
-      <form className="space-y-8" onSubmit={handleSubmit} onReset={handleReset}>
-        <Card className=" ">
+      <form className="space-y-8" onSubmit={handleSubmit} onReset={resetForm}>
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg"> Product details</CardTitle>
+            <CardTitle className="text-lg">Product details</CardTitle>
             <CardDescription>
               Provide the core identification details for the hardware
               component.
@@ -242,7 +112,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                   required
                   placeholder="Enter product name"
                   value={formData.name}
-                  onChange={handleFormChange}
+                  onChange={handleChange}
                 />
                 {renderFieldErrors("name")}
               </FieldContent>
@@ -253,13 +123,13 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                 <FieldLabel htmlFor="categoryId">Category *</FieldLabel>
                 <FieldContent>
                   <select
-                  id="categoryId"
-                  name="categoryId"
-                  required={categories.length > 0}
-                  value={formData.categoryId}
-                    onChange={handleFormChange}
+                    id="categoryId"
+                    name="categoryId"
+                    required={categories.length > 0}
+                    value={formData.categoryId}
+                    onChange={handleChange}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={categories.length === 0}
+                    disabled={categories.length === 0}
                   >
                     <option value="">
                       {categories.length === 0
@@ -274,7 +144,8 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                   </select>
                   {categories.length === 0 ? (
                     <span className="text-xs text-muted-foreground">
-                      Create a category from the Categories page before adding products.
+                      Create a category from the Categories page before adding
+                      products.
                     </span>
                   ) : null}
                   {renderFieldErrors("categoryId")}
@@ -284,14 +155,14 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
               <Field>
                 <FieldLabel htmlFor="manufacturer">Manufacturer *</FieldLabel>
                 <FieldContent>
-                <Input
-                  id="manufacturer"
-                  name="manufacturer"
-                  required
-                  placeholder="Who makes this product?"
-                  value={formData.manufacturer}
-                  onChange={handleFormChange}
-                />
+                  <Input
+                    id="manufacturer"
+                    name="manufacturer"
+                    required
+                    placeholder="Who makes this product?"
+                    value={formData.manufacturer}
+                    onChange={handleChange}
+                  />
                   {renderFieldErrors("manufacturer")}
                 </FieldContent>
               </Field>
@@ -306,7 +177,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     name="model"
                     placeholder="Model or part number"
                     value={formData.model}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("model")}
                 </FieldContent>
@@ -320,7 +191,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     name="sku"
                     placeholder="Internal SKU (optional)"
                     value={formData.sku}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("sku")}
                 </FieldContent>
@@ -338,7 +209,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     min="0"
                     required
                     value={formData.quantity}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("quantity")}
                 </FieldContent>
@@ -355,7 +226,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     type="number"
                     min="0"
                     value={formData.lowStockAt}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("lowStockAt")}
                   {isLowStock && (
@@ -378,7 +249,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     required
                     placeholder="0.00"
                     value={formData.price}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("price")}
                 </FieldContent>
@@ -393,7 +264,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     id="condition"
                     name="condition"
                     value={formData.condition}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Select condition</option>
@@ -415,7 +286,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     name="location"
                     placeholder="e.g., Warehouse A, Shelf 3"
                     value={formData.location}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("location")}
                 </FieldContent>
@@ -425,7 +296,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
         </Card>
 
         {selectedCategory && (
-          <Card className="">
+          <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Zap className="h-5 w-5 text-primary" />
@@ -448,7 +319,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     rows={4}
                     placeholder="List key specs or important details"
                     value={formData.specs}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("specs")}
                 </FieldContent>
@@ -465,7 +336,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     rows={3}
                     placeholder="Describe compatible devices or requirements"
                     value={formData.compatibility}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("compatibility")}
                 </FieldContent>
@@ -474,7 +345,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
           </Card>
         )}
 
-        <Card className="">
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Supply & warranty</CardTitle>
             <CardDescription>
@@ -491,7 +362,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     name="supplier"
                     placeholder="Preferred supplier (optional)"
                     value={formData.supplier}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("supplier")}
                 </FieldContent>
@@ -509,7 +380,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                     min="0"
                     placeholder="Warranty period in months"
                     value={formData.warrantyMonths}
-                    onChange={handleFormChange}
+                    onChange={handleChange}
                   />
                   {renderFieldErrors("warrantyMonths")}
                 </FieldContent>
@@ -518,7 +389,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
           </CardContent>
         </Card>
 
-        <Card className="">
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Media & additional notes</CardTitle>
             <CardDescription>
@@ -538,6 +409,7 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                           alt="Product preview"
                           fill
                           className="object-contain"
+                          unoptimized
                         />
                       </div>
                       <Button
@@ -575,12 +447,11 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                           type="file"
                           accept="image/*"
                           className="hidden"
-                          onChange={handleImageChange}
+                          onChange={handleImageUpload}
                         />
                       </label>
                     </div>
                   )}
-                  {/* Hidden input to store base64 string */}
                   <Input
                     type="hidden"
                     name="imageUrl"
@@ -591,6 +462,41 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
               </FieldContent>
             </Field>
 
+            {tags.length > 0 && (
+              <Field>
+                <FieldLabel>Tags</FieldLabel>
+                <FieldContent>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <label
+                        key={tag.id}
+                        className="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.tagIds.includes(tag.id)}
+                          onChange={() => handleTagToggle(tag.id)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{tag.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {formData.tagIds.map((tagId) => (
+                    <input
+                      key={tagId}
+                      type="hidden"
+                      name="tagIds"
+                      value={tagId}
+                    />
+                  ))}
+                  <span className="text-xs text-muted-foreground">
+                    Select tags to categorize this product
+                  </span>
+                </FieldContent>
+              </Field>
+            )}
+
             <Field>
               <FieldLabel htmlFor="notes">Internal notes</FieldLabel>
               <FieldContent>
@@ -600,13 +506,14 @@ export function AddProductForm({ categories }: { categories: CategoryOption[] })
                   rows={5}
                   placeholder="Share internal notes or handling tips"
                   value={formData.notes}
-                  onChange={handleFormChange}
+                  onChange={handleChange}
                 />
                 {renderFieldErrors("notes")}
               </FieldContent>
             </Field>
           </CardContent>
         </Card>
+
         <div className="flex gap-3">
           <Button
             type="submit"

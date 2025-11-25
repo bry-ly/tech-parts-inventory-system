@@ -37,11 +37,18 @@ export default async function InventoryPage(props: PageProps) {
 
   const userId = user.id;
 
-  const [allProducts, categories] = await Promise.all([
+  const [allProducts, categories, tags] = await Promise.all([
     prisma.product.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
-      include: { category: true },
+      include: {
+        category: true,
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
     }),
     prisma.category.findMany({
       where: { userId },
@@ -49,6 +56,10 @@ export default async function InventoryPage(props: PageProps) {
       include: {
         _count: { select: { products: true } },
       },
+    }),
+    prisma.tag.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -78,6 +89,7 @@ export default async function InventoryPage(props: PageProps) {
     notes: p.notes,
     userId: p.userId,
     createdAt: p.createdAt.toISOString(),
+    tags: p.tags.map((t) => ({ id: t.tag.id, name: t.tag.name })),
   }));
 
   return (
@@ -125,6 +137,10 @@ export default async function InventoryPage(props: PageProps) {
                 <InventoryDataTable
                   items={items}
                   categories={categoryOptions.map(({ id, name }) => ({
+                    id,
+                    name,
+                  }))}
+                  tags={tags.map(({ id, name }) => ({
                     id,
                     name,
                   }))}

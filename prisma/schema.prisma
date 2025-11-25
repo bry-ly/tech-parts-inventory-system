@@ -1,36 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id            String    @id
+  id            String        @id
   name          String
-  email         String
-  emailVerified Boolean   @default(false)
+  email         String        @unique
+  emailVerified Boolean       @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
   accounts      Account[]
-  categories    Category[]
-  tags          Tag[]
-  ownedActivity ActivityLog[] @relation("ActivityOwner")
   actedActivity ActivityLog[] @relation("ActivityActor")
+  ownedActivity ActivityLog[] @relation("ActivityOwner")
+  sales         Sale[]
+  categories    Category[]
+  sessions      Session[]
+  tags          Tag[]
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
   id        String   @id
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
@@ -38,7 +37,6 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@map("session")
 }
 
@@ -47,7 +45,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -57,6 +54,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
 }
@@ -73,28 +71,29 @@ model Verification {
 }
 
 model Product {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   userId         String
   categoryId     String?
   name           String
   manufacturer   String
   model          String?
-  sku            String?  @unique
-  quantity       Int      @default(0)
+  sku            String?      @unique
+  quantity       Int          @default(0)
   lowStockAt     Int?
-  condition      String   @default("new")
+  condition      String       @default("new")
   location       String?
-  price          Decimal  @db.Decimal(12, 2)
-  specs          String?  @db.Text
-  compatibility  String?  @db.Text
+  price          Decimal      @db.Decimal(12, 2)
+  specs          String?
+  compatibility  String?
   supplier       String?
   warrantyMonths Int?
-  notes          String?  @db.Text
+  notes          String?
   imageUrl       String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   category       Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   tags           ProductTag[]
+  saleItems      SaleItem[]
 
   @@index([userId, categoryId])
   @@index([manufacturer])
@@ -115,13 +114,13 @@ model Category {
 }
 
 model Tag {
-  id        String    @id @default(cuid())
+  id        String       @id @default(cuid())
   userId    String
   name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   products  ProductTag[]
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
   @@map("tag")
@@ -132,9 +131,8 @@ model ProductTag {
   productId String
   tagId     String
   createdAt DateTime @default(now())
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([productId, tagId])
   @@map("product_tag")
@@ -150,11 +148,51 @@ model ActivityLog {
   changes    Json?
   note       String?
   createdAt  DateTime @default(now())
-
-  owner User  @relation("ActivityOwner", fields: [userId], references: [id], onDelete: Cascade)
-  actor User? @relation("ActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actor      User?    @relation("ActivityActor", fields: [actorId], references: [id])
+  owner      User     @relation("ActivityOwner", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([entityType, entityId])
   @@map("activity_log")
+}
+
+model Sale {
+  id            String   @id @default(cuid())
+  userId        String
+  invoiceNumber String   @unique // Unique invoice/receipt number
+  customer      String?
+  subtotal      Decimal  @db.Decimal(12, 2) // Before tax and discount
+  discount      Decimal  @default(0) @db.Decimal(12, 2) // Overall sale discount
+  tax           Decimal  @default(0) @db.Decimal(12, 2) // Tax amount
+  totalAmount   Decimal  @db.Decimal(12, 2) // Final amount after tax and discount
+  status        String   @default("completed") // completed, refunded
+  paymentMethod String?
+  notes         String? // Sale notes
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items SaleItem[]
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([invoiceNumber])
+  @@map("sale")
+}
+
+model SaleItem {
+  id          String  @id @default(cuid())
+  saleId      String
+  productId   String? // Optional because product might be deleted later
+  productName String // Snapshot of product name at time of sale
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(12, 2) // Price per unit
+  discount    Decimal @default(0) @db.Decimal(12, 2) // Discount per item
+  subtotal    Decimal @db.Decimal(12, 2) // unitPrice * quantity
+  totalPrice  Decimal @db.Decimal(12, 2) // subtotal - discount
+
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([saleId])
+  @@map("sale_item")
 }

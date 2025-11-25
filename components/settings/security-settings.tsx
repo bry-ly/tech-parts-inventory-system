@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { IconDeviceFloppy, IconLock, IconShield } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconLock } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 interface SecuritySettingsProps {
@@ -27,7 +27,6 @@ interface SecuritySettingsProps {
 
 export function SecuritySettings({ session }: SecuritySettingsProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState(true);
   const [passwords, setPasswords] = useState({
     current: "",
@@ -62,15 +61,6 @@ export function SecuritySettings({ session }: SecuritySettingsProps) {
     toast.success("Password changed successfully");
     setPasswords({ current: "", new: "", confirm: "" });
     setIsLoading(false);
-  };
-
-  const handleEnable2FA = async () => {
-    setTwoFactorEnabled(!twoFactorEnabled);
-    toast.success(
-      twoFactorEnabled
-        ? "Two-factor authentication disabled"
-        : "Two-factor authentication enabled"
-    );
   };
 
   const handleSignOutAll = () => {
@@ -168,63 +158,6 @@ export function SecuritySettings({ session }: SecuritySettingsProps) {
             <IconDeviceFloppy className="size-4 mr-2" />
             {isLoading ? "Updating..." : "Update Password"}
           </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <IconShield className="size-5" />
-            Two-Factor Authentication
-          </CardTitle>
-          <CardDescription>
-            Add an extra layer of security to your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="2fa">Enable Two-Factor Authentication</Label>
-              <p className="text-sm text-muted-foreground">
-                Secure your account with 2FA
-              </p>
-            </div>
-            <Switch
-              id="2fa"
-              checked={twoFactorEnabled}
-              onCheckedChange={handleEnable2FA}
-            />
-          </div>
-
-          {twoFactorEnabled && (
-            <div className="rounded-lg border p-4 space-y-3">
-              <p className="text-sm font-medium">Setup Instructions:</p>
-              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>
-                  Download an authenticator app (Google Authenticator, Authy,
-                  etc.)
-                </li>
-                <li>Scan the QR code below with your authenticator app</li>
-                <li>Enter the 6-digit code to verify</li>
-              </ol>
-              <div className="flex justify-center py-4">
-                <div className="bg-muted size-48 rounded-lg flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">
-                    QR Code Placeholder
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="verification-code">Verification Code</Label>
-                <Input
-                  id="verification-code"
-                  placeholder="Enter 6-digit code"
-                  maxLength={6}
-                />
-              </div>
-              <Button>Verify and Enable</Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 

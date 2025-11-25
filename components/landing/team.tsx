@@ -28,6 +28,11 @@ const members = [
     role: "Members",
     avatar: "/avatars/LALICAN.png",
   },
+  {
+    name: "Josh Allen Baculpo",
+    role: "Members",
+    avatar: "/avatars/BACULPO.jpg",
+  },
 ];
 
 const AvatarWithFallback = ({ src, alt }: { src: string; alt: string }) => {

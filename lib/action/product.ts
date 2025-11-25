@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma/prisma";
 import { Prisma } from "@prisma/client";
+import { logActivity } from "@/lib/logger/logger";
 
 const ProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -126,6 +127,15 @@ export async function deleteProduct(formData: FormData) {
     where: { id },
   });
 
+  await logActivity({
+    userId: user.id,
+    actorId: user.id,
+    entityType: "product",
+    entityId: id,
+    action: "delete",
+    note: `Deleted product: ${existing.name}`,
+  });
+
   revalidatePath("/inventory");
   revalidatePath("/dashboard");
 
@@ -175,13 +185,24 @@ export async function createProduct(formData: FormData) {
       resolvedCategoryId = category.id;
     }
 
-    await prisma.product.create({
+    const product = await prisma.product.create({
       data: {
         ...productData,
         categoryId: resolvedCategoryId,
         userId: user.id,
       },
     });
+
+    await logActivity({
+      userId: user.id,
+      actorId: user.id,
+      entityType: "product",
+      entityId: product.id,
+      action: "create",
+      changes: product as unknown as Prisma.JsonObject,
+      note: `Created product: ${product.name}`,
+    });
+
     revalidatePath("/inventory");
     revalidatePath("/dashboard");
     return {
@@ -189,7 +210,8 @@ export async function createProduct(formData: FormData) {
       message: "Product added successfully!",
       errors: {},
     };
-  } catch {
+  } catch (error) {
+    console.error("Create product error:", error);
     return {
       success: false,
       message: "Failed to create product.",
@@ -218,6 +240,7 @@ export async function updateProduct(formData: FormData) {
     };
   }
 
+  const tagIds = formData.getAll("tagIds") as string[];
   const parsed = ProductSchema.safeParse(extractProductPayload(formData));
 
   if (!parsed.success) {
@@ -267,10 +290,63 @@ export async function updateProduct(formData: FormData) {
       };
     }
 
-    await prisma.product.update({
+    // Handle tags
+    if (tagIds) {
+      // First verify all tags exist and belong to user
+      const validTags = await prisma.tag.findMany({
+        where: {
+          id: { in: tagIds },
+          userId: user.id,
+        },
+      });
+
+      // We replace all tags with the new selection
+      // This means we delete existing relations and create new ones
+      // Prisma's set/connect/disconnect on many-to-many can be tricky with explicit join tables
+      // Since we have an explicit ProductTag model, we need to manage it carefully
+      // But wait, the schema has implicit relation `tags ProductTag[]`?
+      // Let's check schema again.
+      // Schema:
+      // model Product { ... tags ProductTag[] ... }
+      // model Tag { ... products ProductTag[] ... }
+      // model ProductTag { ... product Product ... tag Tag ... }
+
+      // So we need to delete existing ProductTags for this product and create new ones.
+
+      // Actually, it's better to use a transaction or just update the relations.
+      // Since we are using an explicit join table, we can't use `set` directly on `tags` if it was implicit m-n.
+      // But here `tags` is `ProductTag[]`.
+
+      // Let's do it in a separate step or transaction if possible, but for simplicity let's do it here.
+      // We can use `deleteMany` and `createMany` (if supported) or `create`.
+
+      // Ideally we want to do this within the update if possible, but with explicit join table it's:
+      updatePayload.tags = {
+        deleteMany: {}, // Remove all existing links
+        create: validTags.map((tag) => ({
+          tag: { connect: { id: tag.id } },
+        })),
+      };
+    }
+
+    const updatedProduct = await prisma.product.update({
       where: { id },
       data: updatePayload,
     });
+
+    await logActivity({
+      userId: user.id,
+      actorId: user.id,
+      entityType: "product",
+      entityId: id,
+      action: "update",
+      changes: {
+        before: existing as unknown as Prisma.JsonObject,
+        after: updatedProduct as unknown as Prisma.JsonObject,
+      },
+      note: `Updated product: ${updatedProduct.name}`,
+    });
+
     revalidatePath("/inventory");
     revalidatePath("/dashboard");
     return {
@@ -278,7 +354,8 @@ export async function updateProduct(formData: FormData) {
       message: "Product updated successfully.",
       errors: {},
     };
-  } catch {
+  } catch (error) {
+    console.error("Update product error:", error);
     return {
       success: false,
       message: "Failed to update product.",
@@ -355,6 +432,21 @@ export async function adjustStock(formData: FormData) {
       where: { id },
       data: { quantity: newQuantity },
     });
+
+    await logActivity({
+      userId: user.id,
+      actorId: user.id,
+      entityType: "product",
+      entityId: id,
+      action: "stock_adjustment",
+      changes: {
+        previousQuantity: existing.quantity,
+        newQuantity: newQuantity,
+        adjustment: adjustmentValue,
+      } as Prisma.JsonObject,
+      note: `Adjusted stock for ${existing.name} by ${adjustmentValue}`,
+    });
+
     revalidatePath("/inventory");
     revalidatePath("/dashboard");
     return {
@@ -362,11 +454,164 @@ export async function adjustStock(formData: FormData) {
       message: `Stock adjusted successfully. New quantity: ${newQuantity}`,
       errors: {},
     };
-  } catch {
+  } catch (error) {
+    console.error("Error adjusting stock:", error);
     return {
       success: false,
       message: "Failed to adjust stock.",
       errors: { server: ["Failed to adjust stock."] },
+    };
+  }
+}
+
+export async function getLowStockProducts() {
+  const user = await requireUser();
+  if (!user) {
+    return {
+      success: false,
+      message: "User not found",
+      data: [],
+    };
+  }
+
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        userId: user.id,
+        lowStockAt: {
+          not: null,
+        },
+      },
+      orderBy: {
+        quantity: "asc",
+      },
+    });
+
+    const lowStockProducts = products.filter((p) => {
+      return p.lowStockAt !== null && p.quantity <= p.lowStockAt;
+    });
+
+    return {
+      success: true,
+      data: lowStockProducts,
+    };
+  } catch (error) {
+    console.error("Error fetching low stock products:", error);
+    return {
+      success: false,
+      message: "Failed to fetch low stock products",
+      data: [],
+    };
+  }
+}
+
+export async function getInventoryAnalytics() {
+  const user = await requireUser();
+  if (!user) {
+    return {
+      success: false,
+      message: "User not found",
+      data: null,
+    };
+  }
+
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    const totalProducts = products.length;
+    const totalValue = products.reduce(
+      (sum, product) => sum + Number(product.price) * product.quantity,
+      0
+    );
+
+    const lowStockCount = products.filter((p) => {
+      return p.lowStockAt !== null && p.quantity <= p.lowStockAt;
+    }).length;
+
+    const outOfStockCount = products.filter((p) => p.quantity === 0).length;
+
+    // Group by category
+    const categoryIds = [
+      ...new Set(products.map((p) => p.categoryId).filter(Boolean)),
+    ];
+    const categories = await prisma.category.findMany({
+      where: {
+        id: { in: categoryIds as string[] },
+      },
+    });
+
+    const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
+
+    const valueByCategory = products.reduce((acc, product) => {
+      const catName = product.categoryId
+        ? categoryMap.get(product.categoryId) || "Uncategorized"
+        : "Uncategorized";
+      acc[catName] =
+        (acc[catName] || 0) + Number(product.price) * product.quantity;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      success: true,
+      data: {
+        totalProducts,
+        totalValue,
+        lowStockCount,
+        outOfStockCount,
+        valueByCategory,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching inventory analytics:", error);
+    return {
+      success: false,
+      message: "Failed to fetch inventory analytics",
+      data: null,
+    };
+  }
+}
+
+export async function getProducts() {
+  const user = await requireUser();
+  if (!user) {
+    return {
+      success: false,
+      message: "User not found",
+      data: [],
+    };
+  }
+
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        userId: user.id,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    const formattedProducts = products.map((p) => ({
+      ...p,
+      price: p.price.toNumber(),
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    }));
+
+    return {
+      success: true,
+      data: formattedProducts,
+    };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return {
+      success: false,
+      message: "Failed to fetch products",
+      data: [],
     };
   }
 }

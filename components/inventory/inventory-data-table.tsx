@@ -378,9 +378,9 @@ export function InventoryDataTable({
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
-                </option>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>

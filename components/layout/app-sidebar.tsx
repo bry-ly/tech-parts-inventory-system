@@ -79,10 +79,6 @@ const data = {
           title: "Create Sale",
           url: "/sales/create",
         },
-        {
-          title: "Sales History",
-          url: "/sales/history",
-        },
       ],
     },
     {
@@ -146,7 +142,7 @@ export function AppSidebar({
                   className="size-5!"
                 />
                 <span className="text-base font-semibold">
-                  Inventory Dashboard
+                  Dashboard
                 </span>
               </Link>
             </SidebarMenuButton>

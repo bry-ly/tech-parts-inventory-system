@@ -53,6 +53,8 @@ import { createProduct } from "@/lib/action/product";
 export function NavMain({
   items,
   label,
+  onLinkClick,
+  showQuickCreate,
 }: {
   items: {
     title: string;
@@ -65,6 +67,8 @@ export function NavMain({
     }[];
   }[];
   label?: string;
+  onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement>, url: string) => void;
+  showQuickCreate?: boolean;
 }) {
   const [openItem, setOpenItem] = useState<string | null>(null);
   const router = useRouter();
@@ -76,6 +80,9 @@ export function NavMain({
   const [quantity, setQuantity] = useState("0");
   const [condition, setCondition] = useState("new");
   const [isSubmitting, startTransition] = useTransition();
+
+  // Default showQuickCreate to true if not provided
+  const shouldShowQuickCreate = showQuickCreate ?? true;
 
   // Automatically open the group that contains the active page
   // This effect runs when the pathname changes (navigation)
@@ -108,23 +115,32 @@ export function NavMain({
       <SidebarGroupContent>
         <SidebarMenu>
           {/* Quick Create Button */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Quick Create Product"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground w-full duration-200 ease-linear shadow-sm"
-              onClick={() => setQuickCreateOpen(true)}
-            >
-              <IconCirclePlusFilled className="size-5" />
-              <span className="truncate font-medium">Quick Create</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {shouldShowQuickCreate && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Quick Create Product"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground w-full duration-200 ease-linear shadow-sm"
+                onClick={() => setQuickCreateOpen(true)}
+              >
+                <IconCirclePlusFilled className="size-5" />
+                <span className="truncate font-medium">Quick Create</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
 
           {items.map((item) => {
             if (!item.items || item.items.length === 0) {
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <Link href={item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    isActive={pathname === item.url}
+                  >
+                    <Link
+                      href={item.url}
+                      onClick={(e) => onLinkClick?.(e, item.url)}
+                    >
                       {item.icon && <item.icon />}
                       <span className="truncate">{item.title}</span>
                     </Link>
@@ -154,8 +170,19 @@ export function NavMain({
                     <SidebarMenuSub>
                       {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link href={subItem.url}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === subItem.url}
+                            className={
+                              pathname === subItem.url
+                                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                                : ""
+                            }
+                          >
+                            <Link
+                              href={subItem.url}
+                              onClick={(e) => onLinkClick?.(e, subItem.url)}
+                            >
                               <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                               <span>{subItem.title}</span>
                             </Link>

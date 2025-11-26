@@ -3,14 +3,17 @@
 import type * as React from "react";
 import {
   IconDashboard,
-  IconShoppingCart,
-  IconTags,
-  IconPlus,
-  IconSettings,
   IconHelp,
+  IconShoppingCart,
+  IconSettings,
+  IconPackages,
+  IconTrendingUp,
+  IconChartBar,
 } from "@tabler/icons-react";
 
 import { NavUser } from "@/components/layout/nav-user";
+import { NavMain } from "@/components/layout/nav-main";
+import { NavSecondary } from "@/components/layout/nav-secondary";
 import {
   Sidebar,
   SidebarContent,
@@ -19,8 +22,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupContent,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import Image from "next/image";
@@ -43,21 +44,75 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Inventory",
-      url: "/inventory",
+      title: "Products / Inventory",
+      url: "#",
       icon: IconShoppingCart,
+      items: [
+        {
+          title: "Product List",
+          url: "/inventory",
+        },
+        {
+          title: "Add Product",
+          url: "/add-product",
+        },
+        {
+          title: "Categories",
+          url: "/categories",
+        },
+        {
+          title: "Tags",
+          url: "/tags",
+        },
+      ],
     },
     {
-      title: "Categories",
-      url: "/categories",
-      icon: IconTags,
+      title: "Stock Management",
+      url: "#",
+      icon: IconPackages,
+      items: [
+        {
+          title: "Stock Adjustment",
+          url: "/stock/adjustment",
+        },
+        {
+          title: "Low Stock Alerts",
+          url: "/stock/alerts",
+        },
+      ],
     },
     {
-      title: "Add Product",
-      url: "/add-product",
-      icon: IconPlus,
+      title: "Sales / Outbound",
+      url: "#",
+      icon: IconTrendingUp,
+      items: [
+        {
+          title: "Create Sale",
+          url: "/sales/create",
+        },
+      ],
+    },
+    {
+      title: "Reports",
+      url: "#",
+      icon: IconChartBar,
+      items: [
+        {
+          title: "Inventory Report",
+          url: "/reports/inventory",
+        },
+        {
+          title: "Sales Report",
+          url: "/reports/sales",
+        },
+        {
+          title: "Activity Log",
+          url: "/activity-log",
+        },
+      ],
     },
   ],
+  NavDocuments: [],
   navSecondary: [
     {
       title: "Settings",
@@ -113,53 +168,23 @@ export function DemoSidebar({
                     height={20}
                     className="size-5!"
                   />
-                  <span className="text-base font-semibold">
-                    Inventory Dashboard
-                  </span>
+                  <span className="text-base font-semibold">Dashboard</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent className="flex flex-col gap-2">
-              <SidebarMenu>
-                {data.navMain.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <a
-                        href={item.url}
-                        onClick={(e) => handleNavClick(e, item.url)}
-                      >
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-          <SidebarGroup className="mt-auto">
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {data.navSecondary.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild size="sm">
-                      <a
-                        href={item.url}
-                        onClick={(e) => handleNavClick(e, item.url)}
-                      >
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <NavMain
+            items={data.navMain}
+            onLinkClick={handleNavClick}
+            showQuickCreate={false}
+          />
+          <NavSecondary
+            items={data.navSecondary}
+            className="mt-auto"
+            onLinkClick={handleNavClick}
+          />
         </SidebarContent>
         <SidebarFooter>
           <NavUser user={user} />

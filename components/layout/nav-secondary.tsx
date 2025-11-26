@@ -5,6 +5,7 @@ import type React from "react";
 import type { Icon } from "@tabler/icons-react";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import {
   SidebarGroup,
@@ -23,15 +24,25 @@ export function NavSecondary({
     url: string;
     icon: Icon;
   }[];
+  onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement>, url: string) => void;
 } & React.ComponentProps<typeof SidebarGroup>) {
+  const pathname = usePathname();
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild size="sm">
-                <Link href={item.url}>
+              <SidebarMenuButton
+                asChild
+                size="sm"
+                isActive={pathname === item.url}
+              >
+                <Link
+                  href={item.url}
+                  onClick={(e) => props.onLinkClick?.(e, item.url)}
+                >
                   <item.icon />
                   <span>{item.title}</span>
                 </Link>

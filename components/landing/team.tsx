@@ -56,7 +56,7 @@ const AvatarWithFallback = ({ src, alt }: { src: string; alt: string }) => {
 
 export default function TeamSection() {
   const topMembers = members.slice(0, 3);
-  const bottomMembers = members.slice(3, 5);
+  const bottomMembers = members.slice(3);
 
   return (
     <section className="py-12 md:py-32" id="team">
@@ -107,7 +107,7 @@ export default function TeamSection() {
               ))}
             </div>
 
-            {/* Large screens: 3 on top, 2 centered below */}
+            {/* Large screens: 3 on top, 3 below */}
             <div className="hidden lg:block">
               <div className="grid grid-cols-3 gap-4 justify-items-center">
                 {topMembers.map((member, index) => (
@@ -126,7 +126,7 @@ export default function TeamSection() {
                 ))}
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-4 max-w-md mx-auto justify-items-center">
+              <div className="mt-4 grid grid-cols-3 gap-4 justify-items-center">
                 {bottomMembers.map((member, index) => (
                   <div key={index}>
                     <div className="bg-background size-32 rounded-full border p-0.5 shadow shadow-zinc-950/5">

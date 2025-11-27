@@ -2,7 +2,13 @@ import Image from "next/image";
 
 export default function ContentSection() {
   return (
-    <section className="py-16 md:py-32" id="content">
+    <section className="relative py-16 md:py-32 overflow-hidden" id="content">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-zinc-950"
+      >
+        <div className="absolute h-full w-full bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] bg-size-[16px_16px] mask-[radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)]" />
+      </div>
       <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-16">
         <h2 className="relative z-10 max-w-xl text-4xl font-medium lg:text-5xl">
           Complete visibility and control over your entire inventory.

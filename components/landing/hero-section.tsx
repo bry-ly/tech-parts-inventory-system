@@ -6,6 +6,7 @@ import Image from "next/image";
 import { TextEffect } from "@/components/ui/text-effect";
 import { AnimatedGroup } from "@/components/ui/animated-group";
 import { HeroHeader } from "./header";
+import { HeroBackground } from "./hero-background";
 
 const transitionVariants = {
   item: {
@@ -42,41 +43,16 @@ export default function HeroSection() {
         </div>
         <section>
           <div className="relative pt-24 md:pt-36">
-            <AnimatedGroup
-              variants={{
-                container: {
-                  visible: {
-                    transition: {
-                      delayChildren: 1,
-                    },
-                  },
-                },
-                item: {
-                  hidden: {
-                    opacity: 0,
-                    y: 20,
-                  },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: {
-                      type: "spring" as const,
-                      bounce: 0.3,
-                      duration: 2,
-                    },
-                  },
-                },
-              }}
-              className="mask-b-from-35% mask-b-to-90% absolute inset-0 top-56 -z-20 lg:top-32"
-            >
-              <Image
-                src="https://ik.imagekit.io/lrigu76hy/tailark/night-background.jpg?updatedAt=1745733451120"
-                alt="background"
-                className="hidden size-full dark:block"
-                width="3276"
-                height="4095"
+            <div className="spline-container absolute top-0 left-0 w-full h-full -z-10 hidden dark:block">
+              <iframe
+                src="https://my.spline.design/glasswave-6HLEnvJfCRsq1aKT2xqlgme7"
+                width="100%"
+                height="100%"
+                id="aura-spline"
               />
-            </AnimatedGroup>
+            </div>
+            
+            <HeroBackground />
 
             <div
               aria-hidden
@@ -88,10 +64,23 @@ export default function HeroSection() {
                 <AnimatedGroup variants={transitionVariants}>
                   <Link
                     href="/dashboard"
-                    className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
+                    className="relative overflow-hidden group mx-auto flex w-fit items-center gap-4 rounded-full p-1 pl-4 transition-all duration-300 bg-background/50 backdrop-blur-lg border border-border hover:bg-zinc-200 dark:hover:bg-white/10 dark:hover:border-white/20"
                   >
+                    <span
+                      className="absolute inset-0 rounded-full pointer-events-none"
+                      style={{
+                        maskImage:
+                          "linear-gradient(#fff, #fff), linear-gradient(#fff, #fff)",
+                        maskClip: "content-box, border-box",
+                        maskComposite: "exclude",
+                        WebkitMaskComposite: "xor",
+                        padding: "1px",
+                      }}
+                    >
+                      <span className="absolute left-1/2 top-1/2 aspect-square w-[500%] -translate-x-1/2 -translate-y-1/2 animate-spin-slow bg-[conic-gradient(from_90deg_at_50%_50%,transparent_0%,var(--color-foreground)_10%,transparent_20%)] opacity-100" />
+                    </span>
                     <span className="text-foreground text-sm">
-                      See Velos Management in Action
+                      See Velos Inventory in Action
                     </span>
                     <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700"></span>
 

@@ -58,7 +58,7 @@ export default function Features() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-transparent p-8 transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50"
+              className="group relative overflow-hidden rounded-2xl border border-zinc-300 dark:border-zinc-800 p-8 transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50"
             >
               <feature.icon
                 className="mb-4 size-8 text-zinc-900 dark:text-zinc-50"

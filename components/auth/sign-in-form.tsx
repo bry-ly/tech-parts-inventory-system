@@ -28,7 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInInput } from "@/lib/validations/auth";
 import { Spinner } from "@/components/ui/spinner";
 import { Loader } from "lucide-react";
-
+import ShimmerText from "@/components/kokonutui/shimmer-text";
 export function SignInForm({
   className,
   callbackUrl = "/dashboard",
@@ -103,12 +103,10 @@ export function SignInForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       {redirecting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-2">
             <Loader className="size-8 animate-spin" />
-            <p className="text-sm text-muted-foreground">
-              Redirecting to the dashboard...
-            </p>
+            <ShimmerText text="Redirecting to the dashboard..." className="text-sm relative" />
           </div>
         </div>
       )}

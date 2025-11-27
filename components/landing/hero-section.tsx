@@ -51,7 +51,7 @@ export default function HeroSection() {
                 id="aura-spline"
               />
             </div>
-            
+
             <HeroBackground />
 
             <div

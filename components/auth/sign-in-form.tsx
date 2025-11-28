@@ -157,7 +157,7 @@ export function SignInForm({
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="techparts@example.com"
+                        placeholder="your.email@example.com"
                         {...field}
                       />
                     </FormControl>

@@ -98,8 +98,7 @@ export function AddProductForm({ categories, tags }: AddProductFormProps) {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Product details</CardTitle>
             <CardDescription>
-              Provide the core identification details for the hardware
-              component.
+              Provide Product Description & Specifications
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

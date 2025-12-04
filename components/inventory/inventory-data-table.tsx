@@ -13,6 +13,7 @@ import {
   type SortingState,
   useReactTable,
   type VisibilityState,
+  type RowSelectionState,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
@@ -25,6 +26,9 @@ import {
   IconFileSpreadsheet,
   IconAlertCircle,
   IconSearch,
+  IconTrash,
+  IconEdit,
+  IconPackage,
 } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
@@ -72,13 +76,25 @@ import {
 } from "@/components/ui/drawer";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
-import { updateProduct } from "@/lib/action/product";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { updateProduct, deleteProduct } from "@/lib/action/product";
 import {
   CONDITIONS,
   CONDITION_BADGES,
   DEFAULT_COLUMN_VISIBILITY,
   COLUMN_VISIBILITY_VERSION,
+  getStockStatus,
 } from "@/lib/constants/inventory";
 import type { Product, CategoryOption, InitialFilters } from "@/lib/types";
 import { ProductNameCell } from "./columns/cells/product-name-cell";
@@ -152,6 +168,13 @@ export function InventoryDataTable({
     pageIndex: initialFilters?.page ?? 0,
     pageSize: initialFilters?.pageSize ?? 12,
   });
+  // Row selection state
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [isBulkDeleting, startBulkDeleteTransition] = React.useTransition();
+  const [stockStatusFilter, setStockStatusFilter] = React.useState<string>(
+    "all"
+  );
   // Edit dialog state
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [editProduct, setEditProduct] = React.useState<Product | null>(null);
@@ -223,9 +246,34 @@ export function InventoryDataTable({
       }
     });
   }, [editProduct, editForm, router]);
+
   // Define table columns
   const columns = React.useMemo<ColumnDef<Product>[]>(
     () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
       {
         accessorKey: "name",
         header: "Product Name",
@@ -333,23 +381,123 @@ export function InventoryDataTable({
     ],
     [handleEditClick, handleViewDetails]
   );
+  // Apply stock status filter to filteredItems
+  const finalFilteredItems = React.useMemo(() => {
+    if (stockStatusFilter === "all") return filteredItems;
+    return filteredItems.filter((item) => {
+      const qty = Number(item.quantity || 0);
+      const lowThreshold =
+        item.lowStockAt == null ? undefined : Number(item.lowStockAt);
+      const status = getStockStatus(qty, lowThreshold);
+      return status === stockStatusFilter;
+    });
+  }, [filteredItems, stockStatusFilter]);
+
   const table = useReactTable({
-    data: filteredItems,
+    data: finalFilteredItems,
     columns,
     state: {
       sorting,
       columnVisibility,
       pagination,
+      rowSelection,
     },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
+
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedCount = selectedRows.length;
+
+  // Bulk delete handler - defined after table is created
+  const handleBulkDelete = React.useCallback(() => {
+    // Use table's selected row model to get the actual selected products
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      toast.error("No products selected");
+      return;
+    }
+
+    // Extract product IDs from selected rows
+    const selectedProductIds = selectedRows.map((row) => row.original.id);
+
+    startBulkDeleteTransition(async () => {
+      try {
+        const deletePromises = selectedProductIds.map((id) => {
+          const formData = new FormData();
+          formData.append("id", id);
+          return deleteProduct(formData);
+        });
+
+        const results = await Promise.all(deletePromises);
+        const successCount = results.filter((r) => r.success).length;
+        const failedCount = results.filter((r) => !r.success).length;
+
+        if (successCount > 0) {
+          toast.success(`Successfully deleted ${successCount} product(s)`);
+          setRowSelection({});
+          setBulkDeleteOpen(false);
+          router.refresh();
+        }
+        if (failedCount > 0) {
+          toast.error(`${failedCount} product(s) could not be deleted`);
+        }
+      } catch (error) {
+        console.error("Bulk delete error:", error);
+        toast.error("An unexpected error occurred");
+      }
+    });
+  }, [table, router]);
+
   return (
     <div className="space-y-4">
+      {/* Bulk Actions Bar */}
+      {selectedCount > 0 && (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedCount} product{selectedCount !== 1 ? "s" : ""} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Bulk edit - could open a dialog to edit common fields
+                toast.info("Bulk edit coming soon!");
+              }}
+              disabled={isBulkDeleting}
+            >
+              <IconEdit className="h-4 w-4 mr-2" />
+              Edit Selected
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              disabled={isBulkDeleting}
+            >
+              <IconTrash className="h-4 w-4 mr-2" />
+              Delete Selected
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRowSelection({})}
+            >
+              Clear Selection
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Search and Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full max-w-sm">
@@ -420,6 +568,23 @@ export function InventoryDataTable({
                   {cond.charAt(0).toUpperCase() + cond.slice(1)}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={stockStatusFilter}
+            onValueChange={(value) => {
+              setStockStatusFilter(value);
+              setPagination({ ...pagination, pageIndex: 0 });
+            }}
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Stock Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stock Status</SelectItem>
+              <SelectItem value="in-stock">In Stock</SelectItem>
+              <SelectItem value="low-stock">Low Stock</SelectItem>
+              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -522,7 +687,36 @@ export function InventoryDataTable({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  <div className="flex flex-col items-center justify-center gap-2 py-8">
+                    <IconPackage className="h-12 w-12 text-muted-foreground" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-foreground">
+                        No products found
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {finalFilteredItems.length === 0 && items.length > 0
+                          ? "Try adjusting your filters"
+                          : "Get started by adding your first product"}
+                      </p>
+                      {finalFilteredItems.length === 0 && items.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-4"
+                          onClick={() => {
+                            setSearchTerm("");
+                            setCategoryFilter("all");
+                            setManufacturerFilter("all");
+                            setConditionFilter("all");
+                            setLowStockFilter(false);
+                            setStockStatusFilter("all");
+                          }}
+                        >
+                          Clear Filters
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
@@ -991,6 +1185,34 @@ export function InventoryDataTable({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Selected Products</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedCount} product
+              {selectedCount !== 1 ? "s" : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleBulkDelete();
+              }}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

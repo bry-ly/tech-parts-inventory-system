@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "./profile-settings";
 import { NotificationSettings } from "./notification-settings";
 import { SecuritySettings } from "./security-settings";
@@ -12,7 +11,9 @@ import {
   IconBell,
   IconShield,
   IconSettings,
+  IconHelp,
 } from "@tabler/icons-react";
+import { ComingSoon } from "@/components/coming-soon";
 
 interface SettingsTabsProps {
   user: {
@@ -97,6 +98,15 @@ export function SettingsTabs({
             <IconSettings className="size-4" />
             Preferences
           </button>
+          <button
+            onClick={() => handleTabChange("help")}
+            className={`flex items-center gap-2 justify-start rounded-md p-2 text-left text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
+              currentTab === "help" ? "bg-muted hover:bg-muted" : "transparent"
+            }`}
+          >
+            <IconHelp className="size-4" />
+            Help Center
+          </button>
         </nav>
       </aside>
       <div className="flex-1 lg:max-w-2xl">
@@ -104,6 +114,7 @@ export function SettingsTabs({
         {currentTab === "notifications" && <NotificationSettings />}
         {currentTab === "security" && <SecuritySettings session={session} />}
         {currentTab === "preferences" && <PreferencesSettings />}
+        {currentTab === "help" && <ComingSoon />}
       </div>
     </div>
   );

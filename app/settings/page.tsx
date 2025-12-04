@@ -57,7 +57,7 @@ export default async function SettingsPage(props: PageProps) {
             <div>
               <h1 className="text-3xl font-bold">Settings</h1>
               <p className="mt-1 text-muted-foreground">
-                Manage your account settings and preferences
+                Manage your account settings and set e-mail preferences.
               </p>
             </div>
 

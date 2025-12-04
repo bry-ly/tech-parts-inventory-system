@@ -108,11 +108,6 @@ const data = {
       url: "/settings",
       icon: IconSettings,
     },
-    {
-      title: "Help",
-      url: "#",
-      icon: IconHelp,
-    },
   ],
 };
 

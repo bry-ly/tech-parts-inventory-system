@@ -38,7 +38,9 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
   });
   const [imagePreview, setImagePreview] = useState<string | null>(user.image);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
@@ -85,8 +87,6 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name.trim());
       formDataToSend.append("email", formData.email.trim());
-      // If imagePreview is null and it was different from original, send empty string to remove it
-      // Otherwise, send the imagePreview value (which could be base64 or URL)
       if (imagePreview !== user.image) {
         formDataToSend.append("image", imagePreview || "");
       }
@@ -115,153 +115,63 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
     });
   };
 
-  const handleCancel = () => {
-    setFormData({
-      name: user.name || "",
-      email: user.email,
-      bio: "",
-      company: "",
-      location: "",
-    });
-    setImagePreview(user.image);
-    toast.info("Changes discarded");
-  };
-
-  const getInitials = () => {
-    if (formData.name) {
-      return formData.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase();
-    }
-    return formData.email[0].toUpperCase();
-  };
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
-        <CardDescription>
-          Update your personal information and profile picture
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <Avatar className="size-24">
-              <AvatarImage
-                src={imagePreview || undefined}
-                alt={formData.name || "User"}
-              />
-              <AvatarFallback className="text-lg">
-                {getInitials()}
-              </AvatarFallback>
-            </Avatar>
-            {imagePreview && imagePreview !== user.image && (
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute -top-1 -right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
-              >
-                <IconX className="size-3" />
-              </button>
-            )}
-          </div>
-          <div>
-            <p className="font-medium">{formData.name || "User"}</p>
-            <p className="text-sm text-muted-foreground">{formData.email}</p>
-            <label htmlFor="avatar-upload">
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                type="button"
-                asChild
-              >
-                <span className="cursor-pointer">
-                  <IconCamera className="size-4 mr-2" />
-                  Change Photo
-                </span>
-              </Button>
-              <input
-                id="avatar-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-            </label>
-          </div>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">Profile</h3>
+        <p className="text-sm text-muted-foreground">
+          This is how others will see you on the site.
+        </p>
+      </div>
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <Label htmlFor="name">Username</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Enter your username"
+          />
+          <p className="text-[0.8rem] text-muted-foreground">
+            This is your public display name. It can be your real name or a
+            pseudonym. You can only change this once every 30 days.
+          </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Input
-              id="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              placeholder="Tell us about yourself"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company">Company</Label>
-            <Input
-              id="company"
-              value={formData.company}
-              onChange={handleChange}
-              placeholder="Your company name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="Your location"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Select a verified email to display"
+          />
+          <p className="text-[0.8rem] text-muted-foreground">
+            You can manage verified email addresses in your email settings.
+          </p>
         </div>
 
-        <div className="flex justify-end gap-4">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isPending}
-          >
-            Cancel
-          </Button>
+        <div className="space-y-2">
+          <Label htmlFor="bio">Bio</Label>
+          <textarea
+            id="bio"
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            value={formData.bio}
+            onChange={handleChange}
+            placeholder="I own a computer."
+          />
+          <p className="text-[0.8rem] text-muted-foreground">
+            You can @mention other users and organizations to link to them.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4 pt-4">
           <Button onClick={handleSave} disabled={isPending}>
-            <IconDeviceFloppy className="size-4 mr-2" />
-            {isPending ? "Saving..." : "Save Changes"}
+            Update profile
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

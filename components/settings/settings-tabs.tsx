@@ -1,11 +1,18 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "./profile-settings";
 import { NotificationSettings } from "./notification-settings";
 import { SecuritySettings } from "./security-settings";
 import { PreferencesSettings } from "./preferences-settings";
+
+import {
+  IconUser,
+  IconBell,
+  IconShield,
+  IconSettings,
+} from "@tabler/icons-react";
 
 interface SettingsTabsProps {
   user: {
@@ -39,34 +46,65 @@ export function SettingsTabs({
     router.replace(`${pathname}?${params.toString()}`);
   };
 
+  // Helper to determine active tab
+  const currentTab = searchParams.get("tab") || defaultTab;
+
   return (
-    <Tabs
-      defaultValue={defaultTab}
-      onValueChange={handleTabChange}
-      className="w-full"
-    >
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="profile">Profile</TabsTrigger>
-        <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        <TabsTrigger value="security">Security</TabsTrigger>
-        <TabsTrigger value="preferences">Preferences</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="profile" className="mt-6">
-        <ProfileSettings user={user} />
-      </TabsContent>
-
-      <TabsContent value="notifications" className="mt-6">
-        <NotificationSettings />
-      </TabsContent>
-
-      <TabsContent value="security" className="mt-6">
-        <SecuritySettings session={session} />
-      </TabsContent>
-
-      <TabsContent value="preferences" className="mt-6">
-        <PreferencesSettings />
-      </TabsContent>
-    </Tabs>
+    <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+      <aside className="-mx-4 lg:w-1/5">
+        <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
+          <button
+            onClick={() => handleTabChange("profile")}
+            className={`flex items-center gap-2 justify-start rounded-md p-2 text-left text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
+              currentTab === "profile"
+                ? "bg-muted hover:bg-muted"
+                : "transparent"
+            }`}
+          >
+            <IconUser className="size-4" />
+            Profile
+          </button>
+          <button
+            onClick={() => handleTabChange("notifications")}
+            className={`flex items-center gap-2 justify-start rounded-md p-2 text-left text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
+              currentTab === "notifications"
+                ? "bg-muted hover:bg-muted"
+                : "transparent"
+            }`}
+          >
+            <IconBell className="size-4" />
+            Notifications
+          </button>
+          <button
+            onClick={() => handleTabChange("security")}
+            className={`flex items-center gap-2 justify-start rounded-md p-2 text-left text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
+              currentTab === "security"
+                ? "bg-muted hover:bg-muted"
+                : "transparent"
+            }`}
+          >
+            <IconShield className="size-4" />
+            Security
+          </button>
+          <button
+            onClick={() => handleTabChange("preferences")}
+            className={`flex items-center gap-2 justify-start rounded-md p-2 text-left text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
+              currentTab === "preferences"
+                ? "bg-muted hover:bg-muted"
+                : "transparent"
+            }`}
+          >
+            <IconSettings className="size-4" />
+            Preferences
+          </button>
+        </nav>
+      </aside>
+      <div className="flex-1 lg:max-w-2xl">
+        {currentTab === "profile" && <ProfileSettings user={user} />}
+        {currentTab === "notifications" && <NotificationSettings />}
+        {currentTab === "security" && <SecuritySettings session={session} />}
+        {currentTab === "preferences" && <PreferencesSettings />}
+      </div>
+    </div>
   );
 }
